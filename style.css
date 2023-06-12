@@ -1,0 +1,15 @@
+th,
+td {
+  padding: 15 px;
+}
+.btn {
+  display: block;
+  width: 100%;
+}
+p {
+  font-family: consolas;
+}
+table.table {
+  margin-left: auto;
+  margin-right: auto;
+}
