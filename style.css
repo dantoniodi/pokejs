@@ -5,6 +5,7 @@ td {
 .btn {
   display: block;
   width: 100%;
+  text-transform: capitalize;
 }
 p {
   font-family: consolas;

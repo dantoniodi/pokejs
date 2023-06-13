@@ -1,13 +1,9 @@
-const level = Math.floor(Math.random() * (100 - 5)) + 5 //random num 5-100
-
 class Pokemon {
-  constructor(name, sprite, hp, type, moves) {
+  constructor(name, sprite, hp, moves) {
     this.name = name;
     this.sprite = sprite;
-    this.lv = level;
     this.hp = hp;
     this.fullhp = hp;
-    this.type = type;
     this.moves = moves;
   }
 }
@@ -54,97 +50,57 @@ let typeMatch = {
   Venusaur: [["poison"], ["fire", "fly", "ice", "steel"], ["grass", "water"]],
 };
 
-const getPokemon = id =>
-  fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then((resp) => resp.json())
+function spawn(bool) {
+  let p = pkmList[Math.floor(Math.random() * pkmList.length)];
+  let pkm = new Pokemon(p[0], p[1], p[2], p[3]);
 
-const getType = id => 
-  fetch(`https://pokeapi.co/api/v2/type/${id}`).then((resp) => resp.json())
-
-const getMove = url => fetch(url).then((resp) => resp.json())
-
-const setMovePool = async(pool) => {
-  let movePool = new Array(4)
-  for(let i=0; i<4; i++) {
-    let moveNum = Math.floor(Math.random() * pool.length)
-    let moveInfo = await getMove(pool[moveNum].move.url)
-    movePool.fill([
-        moveInfo.name,
-        moveInfo.type.name,
-        moveInfo.power != null ? moveInfo.power : 0,
-        moveInfo.accuracy != null ? moveInfo.accuracy : 100,
-      ], i)
-  }
-  //console.log(movePool);
-  return movePool
-}
-
-function calcHP(stats) {
-  let iv = 31
-  let ev = 0
-  //Formula found on https://pokemon.fandom.com/wiki/Statistics
-  return Math.floor(0.01 * (2 * stats.base_stat + iv + Math.floor(0.25 * ev)) * level) + level + 10
-}
-
-async function spawn(bool) {
-  let p = await getPokemon(Math.floor(Math.random() * 150) + 1);
-  let pkm = new Pokemon(
-                  p.name,
-                  p.sprites,
-                  calcHP(p.stats[0]),
-                  p.types.map(typeInfo => typeInfo.type.name),
-                  await setMovePool(p.moves)
-                )
-  console.log(pkm);
   if (bool) {
     for (i = 0; i < 4; i++) {
-      let moveText = pkm.moves[i][0]+' ('+pkm.moves[i][1]+')'+' [Pwr:'+pkm.moves[i][2]+' | Acc: '+pkm.moves[i][3]+']'
-      document.getElementById("m" + i).value = moveText;
+      document.getElementById("m" + i).value = pkm.moves[i][0];
     }
   }
   return pkm;
 }
 
-async function createPokes() {
-  let pk1 = await spawn(true);
-  s1 = document.createElement("img");
-  s1.src = pk1.sprite.versions['generation-v']['black-white'].animated['back_default'];
-  document.getElementById("pk1").appendChild(s1);
-  document.getElementById("hp1").innerHTML =
-    "<p>HP: " + pk1.hp + "/" + pk1.fullhp + "<br>LV: " + pk1.lv + "</p>";
+let pk1 = spawn(true);
+s1 = document.createElement("img");
+s1.src = pk1.sprite;
+document.getElementById("pk1").appendChild(s1);
+document.getElementById("hp1").innerHTML =
+  "<p>HP: " + pk1.hp + "/" + pk1.fullhp + "</p>";
 
-  let pk2 = await spawn(false);
-  s2 = document.createElement("img");
-  s2.src = pk2.sprite.versions['generation-v']['black-white'].animated['front_default'];
-  document.getElementById("pk2").appendChild(s2);
-  document.getElementById("hp2").innerHTML =
-    "<p>HP: " + pk2.hp + "/" + pk2.fullhp + "<br>LV: " + pk2.lv + "</p>";
+let pk2 = spawn(false);
+s2 = document.createElement("img");
+s2.src = pk2.sprite;
+document.getElementById("pk2").appendChild(s2);
+document.getElementById("hp2").innerHTML =
+  "<p>HP: " + pk2.hp + "/" + pk2.fullhp + "</p>";
 
-  for (i = 0; i < 4; i++) {
-    let btn = document.getElementById("m" + i);
-    let move = pk1.moves[i];
-  
-    function addHandler(btn, move, pk1, pk2) {
-      btn.addEventListener("click", function (e) {
-        attack(move, pk1, pk2, "hp2", "");
-        setTimeout(
-          attack,
-          2000,
-          pk2.moves[Math.floor(Math.random() * 3)],
-          pk2,
-          pk1,
-          "hp1",
-          "Foe "
-        );
-      });
-    }
-    addHandler(btn, move, pk1, pk2);
+for (i = 0; i < 4; i++) {
+  let btn = document.getElementById("m" + i);
+  let move = pk1.moves[i];
+
+  function addHandler(btn, move, pk1, pk2) {
+    btn.addEventListener("click", function (e) {
+      attack(move, pk1, pk2, "hp2", "");
+      setTimeout(
+        attack,
+        2000,
+        pk2.moves[Math.floor(Math.random() * 3)],
+        pk2,
+        pk1,
+        "hp1",
+        "Foe "
+      );
+    });
   }
+  addHandler(btn, move, pk1, pk2);
 }
 
 function attack(move, attacker, receiver, hp, owner) {
   document.getElementById("comment").innerHTML =
     "<p>" + owner + attacker.name + " used " + move[0] + "!</p>";
-  if (Math.random() < move[3]) { //check accuracy
+  if (Math.random() < move[3]) {
     let power = (move[2] += Math.floor(Math.random() * 10));
     let rtype = typeMatch[receiver.name];
     let mtype = move[1];
@@ -200,5 +156,3 @@ function checkWinner(hp) {
     }, 1500);
   }
 }
-
-createPokes()
