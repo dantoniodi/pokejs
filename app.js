@@ -1,4 +1,4 @@
-const level = Math.floor(Math.random() * (100 - 5)) + 5 //random num 5-100
+const level = Math.floor(Math.random() * (100 - 5)) + 5
 
 class Pokemon {
   constructor(name, sprite, hp, type, moves) {
@@ -53,12 +53,10 @@ let typeMatch = {
   Blastoise: [[""], ["grass"], ["fire", "water"]],
   Venusaur: [["poison"], ["fire", "fly", "ice", "steel"], ["grass", "water"]],
 };
+//console.log(typeMatch);
 
 const getPokemon = id =>
   fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then((resp) => resp.json())
-
-const getType = id => 
-  fetch(`https://pokeapi.co/api/v2/type/${id}`).then((resp) => resp.json())
 
 const getMove = url => fetch(url).then((resp) => resp.json())
 
@@ -74,27 +72,54 @@ const setMovePool = async(pool) => {
         moveInfo.accuracy != null ? moveInfo.accuracy : 100,
       ], i)
   }
-  //console.log(movePool);
   return movePool
 }
 
+const getType = async(types) => {
+  let typeMatch = new Array()
+  for(let i=0; i<types.length; i++) {
+    let data = await fetch(types[i].type.url).then(resp => resp.json())
+    typeMatch.push([
+      data.name,[
+        data.damage_relations.no_damage_from.map(names => names.name),
+        data.damage_relations.half_damage_from.map(names => names.name),
+        data.damage_relations.double_damage_from.map(names => names.name)
+      ]
+    ])
+  }
+  /*for(i=0;i<typeMatch.length;i++){
+    console.log(typeMatch[i][1])
+    for(x=0;x<typeMatch[i][1].length;x++){
+      if(typeMatch[i][1][x].includes('ground')){
+        switch(x){
+          case 0: console.log('Imune'); break
+          case 1: console.log('Resistente'); break
+          case 2: console.log('Fraco'); break
+        }
+      }
+    }
+  }*/
+  //console.log(typeMatch.length);
+  return typeMatch
+}
+
 function calcHP(stats) {
-  let iv = 31
-  let ev = 0
+  let iv = Math.floor(Math.random() * 31)
+  let ev = Math.floor(Math.random() * 252)
   //Formula found on https://pokemon.fandom.com/wiki/Statistics
   return Math.floor(0.01 * (2 * stats.base_stat + iv + Math.floor(0.25 * ev)) * level) + level + 10
 }
 
 async function spawn(bool) {
-  let p = await getPokemon(Math.floor(Math.random() * 150) + 1);
+  let p = await getPokemon(Math.floor(Math.random() * 640) + 1);//164
   let pkm = new Pokemon(
                   p.name,
                   p.sprites,
                   calcHP(p.stats[0]),
-                  p.types.map(typeInfo => typeInfo.type.name),
+                  await getType(p.types), //p.types.map(typeInfo => typeInfo.type.name),
                   await setMovePool(p.moves)
                 )
-  console.log(pkm);
+  //console.log(pkm);
   if (bool) {
     for (i = 0; i < 4; i++) {
       let moveText = pkm.moves[i][0]+' ('+pkm.moves[i][1]+')'+' [Pwr:'+pkm.moves[i][2]+' | Acc: '+pkm.moves[i][3]+']'
@@ -110,14 +135,18 @@ async function createPokes() {
   s1.src = pk1.sprite.versions['generation-v']['black-white'].animated['back_default'];
   document.getElementById("pk1").appendChild(s1);
   document.getElementById("hp1").innerHTML =
-    "<p>HP: " + pk1.hp + "/" + pk1.fullhp + "<br>LV: " + pk1.lv + "</p>";
+    "<p>" + pk1.name
+    +"<br>HP: " + pk1.hp + "/" + pk1.fullhp 
+    +"<br>LV: " + pk1.lv + "</br>";
 
   let pk2 = await spawn(false);
   s2 = document.createElement("img");
   s2.src = pk2.sprite.versions['generation-v']['black-white'].animated['front_default'];
   document.getElementById("pk2").appendChild(s2);
   document.getElementById("hp2").innerHTML =
-    "<p>HP: " + pk2.hp + "/" + pk2.fullhp + "<br>LV: " + pk2.lv + "</p>";
+    "<p>" + pk2.name
+    +"<br>HP: " + pk2.hp + "/" + pk2.fullhp
+    +"<br>LV: " + pk2.lv + "</br>";
 
   for (i = 0; i < 4; i++) {
     let btn = document.getElementById("m" + i);
@@ -142,62 +171,67 @@ async function createPokes() {
 }
 
 function attack(move, attacker, receiver, hp, owner) {
-  document.getElementById("comment").innerHTML =
+  document.getElementById("comment").innerHTML +=
     "<p>" + owner + attacker.name + " used " + move[0] + "!</p>";
-  if (Math.random() < move[3]) { //check accuracy
+  //console.log((Math.random())+','+(move[3]/100));
+  if (Math.random() <= (move[3]/100)) { //check accuracy
     let power = (move[2] += Math.floor(Math.random() * 10));
-    let rtype = typeMatch[receiver.name];
+    let rtype = receiver.type;
     let mtype = move[1];
     let scale = 1;
 
     for (i = 0; i < rtype.length; i++) {
-      if (rtype[i].includes(mtype)) {
-        switch (i) {
-          case 0:
-            scale = 0;
-            setTimeout(function () {
-              document.getElementById("comment").innerHTML =
-                "<p>It had no effect!</p>";
-            }, 1000);
-            break;
-          case 1:
-            scale = 2;
-            setTimeout(function () {
-              document.getElementById("comment").innerHTML =
-                "<p>It was super effective!</p>";
-            }, 1000);
-            break;
-          case 2:
-            scale = 0.5;
-            setTimeout(function () {
-              document.getElementById("comment").innerHTML =
-                "<p>It was not very effective!</p>";
-            }, 1000);
-            break;
+      for (x = 0; x < rtype[i][1].length; x++) {
+        if (rtype[i][1][x].includes(mtype)) {
+          switch (x) {
+            case 0:
+              scale = 0;
+              setTimeout(function () {
+                document.getElementById("comment").innerHTML +=
+                  "<p>It had no effect!</p>";
+              }, 1000);
+              break;
+            case 1:
+              scale = 0.5;
+              setTimeout(function () {
+                document.getElementById("comment").innerHTML +=
+                  "<p>It was not very effective!</p>";
+              }, 1000);
+              break;
+            case 2:
+              scale = 2;
+              setTimeout(function () {
+                document.getElementById("comment").innerHTML +=
+                  "<p>It was super effective!</p>";
+              }, 1000);
+              break;
+          }
+          break;
         }
-        break;
       }
     }
-    power *= scale;
-    receiver.hp -= Math.floor(power);
+    let dmgDone = Math.floor(power *= scale)    
+    receiver.hp -= dmgDone
     document.getElementById(hp).innerHTML =
       "<p>HP: " + receiver.hp + "/" + receiver.fullhp + "</p>";
+    console.log('Dmg done:'+dmgDone);
   } else {
     setTimeout(function () {
-      document.getElementById("comment").innerHTML = "<p>Attack missed!</p>";
+      document.getElementById("comment").innerHTML += "<p>Attack missed!</p>";
     });
   }
-  checkWinner(hp);
+  checkWinner(attacker,receiver,hp);
 }
 
-function checkWinner(hp) {
+function checkWinner(pk1,pk2,hp) {
   let f = pk1.hp <= 0 ? pk1 : pk2.hp <= 0 ? pk2 : false;
   if (f != false) {
-    alert("GAME OVER: " + f.name + " fainted!");
+    //alert("GAME OVER: " + f.name + " fainted!");
+    document.getElementById("comment").innerHTML += "<p>GAME OVER: " + f.name + " fainted!</p>";
     document.getElementById(hp).innerHTML = "<p>HP: 0/" + f.fullhp + "</p>";
     setTimeout(function () {
       location.reload();
-    }, 1500);
+    }, 5000);
   }
 }
 
