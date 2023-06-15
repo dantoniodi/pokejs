@@ -1,3 +1,9 @@
+* {
+  font-family: consolas;
+}
+tr {
+  position: relative;
+}
 th,
 td {
   padding: 15 px;
@@ -7,10 +13,99 @@ td {
   width: 100%;
   text-transform: capitalize;
 }
-p {
-  font-family: consolas;
-}
 table.table {
   margin-left: auto;
   margin-right: auto;
+  background: url('img/bg1.png') no-repeat;
+  max-width: 100%;
+  max-height: 100%;
+  height: 400px;
+  width: 400px;
+}
+img {
+  max-width: 100%;
+}
+#comment {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 99%;
+  height: 60px;
+  background-color: wheat;
+}
+#comment p {
+  text-align: center;
+  text-transform: capitalize;
+  font-size: 1rem;
+  font-weight: bold;
+  margin: 6px auto;
+}
+#buttons {
+  height: 92px;
+  width: 376px;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  position: absolute;
+  left: 9px;
+  bottom: 7px;
+}
+#buttons > button {
+  flex: 1;
+  width: 25%;
+  flex-basis: calc(50%);
+}
+button {
+  white-space: normal;
+  word-break: break-word;
+  overflow: hidden;
+}
+#if1 {
+  position: absolute;
+  right: 16px;
+  top: 134px;
+}
+#if2 {
+  position: absolute;
+  left: 22px;
+  bottom: 60px;
+}
+span {
+  text-transform: capitalize;
+}
+#hp1 {
+  position: absolute;
+  right: 20px;
+  top: 80px;
+  width: 150px;
+}
+#hp2 {
+  position: absolute;
+  left: 20px;
+  bottom: 120px;
+  width: 150px;
+}
+#pk1 {
+  position: absolute;
+  left: 80px;
+  bottom: 30px;
+}
+#pk2 {
+  position: absolute;
+  right: 70px;
+  bottom: 160px;
+}
+.bar {
+  width: 100%;
+  background-color: dimgray;
+  padding: 3px;
+  border-radius: 3px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, .2);
+}
+.bar-fill {
+  display: block;
+  height: 10px;
+  background-color: springgreen;
+  border-radius: 3px;
+  transition: width 500ms ease-in-out;
 }
