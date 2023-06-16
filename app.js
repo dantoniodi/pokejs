@@ -55,12 +55,17 @@ const setMovePool = async(pool) => {
   }
   for(let i=0; i<4; i++) {
     let moveInfo = await getMove(pool[Array.from(moveNum)[i]].move.url)
+    //let moveInfo = await getMove('https://pokeapi.co/api/v2/move/38/')
     movePool.fill({
+        'pp': moveInfo.pp,
         'name': moveInfo.name,
         'type': moveInfo.type.name,
         'class': moveInfo.damage_class.name,
         'power': moveInfo.power != null ? moveInfo.power : 0,
         'accuracy': moveInfo.accuracy != null ? moveInfo.accuracy : 100,
+        'priority': moveInfo.priority,
+        'changes': moveInfo.stat_changes,
+        'meta': moveInfo.meta
     }, i)
   }
   return movePool
@@ -87,42 +92,56 @@ async function calcStat(stats) {
   return pokeStats
 }
 
-function calcDmg(move,ata,rec,bon,crit) {
-  let A = 0 //attacker stat (att or spa)
-  let B = move.power //move power
-  let C = crit //normal or critical hit (1 or 2)
-  let D = 0 //defender stat (def or spd)
-  let L = ata.lv //attacker level
-  let X = 1 //same-type attack bonus (1 or 1.5)
-  let Y = bon //type modifiers (4, 2, 1, 0.5, 0.25 or 0)
-  let Z = Math.floor(Math.random() * (255 - 217)) + 217 //random factor
-  switch(move.class) {
-    case 'physical': A = ata.stats['attack'].actual; D = rec.stats['defense'].actual; break
-    case 'special': A = ata.stats['special-attack'].actual; D = rec.stats['special-defense'].actual; break
+function changeBar(ata,rec,div) { //refatorar essa merda depois
+  let hp_bar = [];
+  let hp_text = [];
+  let hp_value = [];
+  let hp_percent = [];
+  
+  if(div == 'hp1'){
+    hp_bar[0] = document.querySelector('#hp1 .bar-fill')
+    hp_bar[1] = document.querySelector('#hp2 .bar-fill')
+    hp_text[0] = document.querySelector('#hp1 .text')
+    hp_text[1] = document.querySelector('#hp2 .text')
+  } else {
+    hp_bar[0] = document.querySelector('#hp2 .bar-fill')
+    hp_bar[1] = document.querySelector('#hp1 .bar-fill')
+    hp_text[0] = document.querySelector('#hp2 .text')
+    hp_text[1] = document.querySelector('#hp1 .text')
   }
-  let stab = ata.type.map(typeInfo => typeInfo[0])
-  if (stab.includes(move.type)) {
-    X = 1.5;
+  hp_value[0] = ata
+  hp_value[1] = rec
+  hp_percent[0] = Math.floor(ata.hp*100/ata.fullhp)
+  hp_percent[1] = Math.floor(rec.hp*100/rec.fullhp)
+  
+  
+  for(let i=0; i<hp_bar.length; i++) {
+    if(hp_percent[i] === 100) {
+      hp_bar[i].style.backgroundColor = 'springgreen';
+    } else if(hp_percent[i] > 50) {
+      hp_bar[i].style.backgroundColor = 'chartreuse';
+    } else if (hp_percent[i] > 20) {
+      hp_bar[i].style.backgroundColor = 'gold';
+    } else if (hp_percent[i] > 0){
+      hp_bar[i].style.backgroundColor = 'red';
+    } else {
+      hp_percent[i] = 0
+    }
+    hp_bar[i].style.width = hp_percent[i]+'%'
+    hp_text[i].innerHTML = "<p>HP: " + hp_value[i].hp + "/" + hp_value[i].fullhp + "</p>";
   }
-  let DMG = 0;
-  if(move.class !== 'status') {
-    baseDmg = ((2*L*C/5+2)*B*A/D)/50 //never changes
-    DMG = Math.floor(((baseDmg+2)*X*Y)*Z/255) //gen 1 formula
-  }
-  console.log('Dmg: '+DMG)
-  return DMG
 }
 
 function checkCrit(ata,crit = 1) { //check critical hit chance
-  let critBase = Math.floor(ata['speed'].base/2)
+  let critBase = Math.floor(ata.speed.base/2)
   let critChance = Math.floor(Math.random() * 255)
-  if(critBase > critChance){
+  if(critBase > critChance) {
     crit = 2;
     setTimeout(function () {
       comment.innerHTML += "<p>A critical hit!</p>";
     }, 1000);
   }
-  console.log(critBase+','+critChance)
+  console.log('Crit chance: '+critBase/256*100+'%'+', Crit: '+crit)
   return crit
 }
 
@@ -165,11 +184,11 @@ async function spawn(bool, id = Math.floor(Math.random() * 640) + 1) {
               await getType(p.types),
               await setMovePool(p.moves),
             )
-  console.log(pkm);
+  //console.log(pkm);
   if (bool) {
     for (i = 0; i < 4; i++) {
-      let moveText = pkm.moveset[i].name+' ('+pkm.moveset[i].type+')<br>'
-        +'[Pwr:'+pkm.moveset[i].power+' | Acc: '+pkm.moveset[i].accuracy+']'
+      let moveText = '<span class="move-name">'+pkm.moveset[i].name+'</span> ('+pkm.moveset[i].type+')<br>'
+        +'<small>[Pwr: '+pkm.moveset[i].power+' | Acc: '+pkm.moveset[i].accuracy+']</small>'
       document.getElementById("m" + i).innerHTML = moveText;
     }
   }
@@ -177,36 +196,54 @@ async function spawn(bool, id = Math.floor(Math.random() * 640) + 1) {
 }
 
 async function createPokes() {
+  
   let pk1 = await spawn(true);
   s1 = document.createElement("img");
   s1.src = pk1.sprite.versions['generation-v']['black-white'].animated['back_default'];
   document.getElementById("pk1").appendChild(s1);
   document.getElementById("if1").innerHTML = "<span>" + pk1.name + "</span> Lv." + pk1.lv
-  // document.getElementById("hp1").innerHTML = "<p>HP: " + pk1.hp + "/" + pk1.fullhp + "</p>"
+  document.querySelector('#hp1 .text').innerHTML = "<p>HP: " + pk1.hp + "/" + pk1.fullhp + "</p>"
 
   let pk2 = await spawn(false);
   s2 = document.createElement("img");
   s2.src = pk2.sprite.versions['generation-v']['black-white'].animated['front_default'];
   document.getElementById("pk2").appendChild(s2);
   document.getElementById("if2").innerHTML = "<span>" + pk2.name + "</span> Lv." + pk2.lv
-  // document.getElementById("hp2").innerHTML = "<p>HP: " + pk2.hp + "/" + pk2.fullhp + "</p>"
+  document.querySelector('#hp2 .text').innerHTML = "<p>HP: " + pk2.hp + "/" + pk2.fullhp + "</p>"
 
+  let moveTurn = 1;
   for (i = 0; i < 4; i++) {
     let btn = document.getElementById("m" + i);
     let move = pk1.moveset[i];
+    let foeMove = pk2.moveset[Math.floor(Math.random() * 3)]
   
     function addHandler(btn, move, pk1, pk2) {
       btn.addEventListener("click", function (e) {
-        attack(move, pk1, pk2, "hp2", "");
-        setTimeout(
-          attack,
-          2000,
-          pk2.moveset[Math.floor(Math.random() * 3)],
-          pk2,
-          pk1,
-          "hp1",
-          "Foe "
-        );
+        let moveOrder = 0; //set move order (1=foe,0=you)
+        console.log('Speed(Pk1:'+pk1.stats.speed.actual+'|Pk2:'+pk2.stats.speed.actual+')');
+        if(foeMove.priority > move.priority) { //check move prority
+          moveOrder = 1
+        } else if(foeMove.priority < move.priority) {
+          moveOrder = 0
+        } else {
+          if(pk2.stats.speed.actual > pk1.stats.speed.actual) { //check pkm speed
+            moveOrder = 1
+          }
+        }
+        comment.innerHTML += "<p>--- Turn "+moveTurn+" ---</p>";
+        console.log('Order: '+moveOrder);
+        if(moveOrder == 0){
+          attack(move,pk1,pk2,"hp1","")
+          if(pk2.hp > 0) {
+            setTimeout(attack,2500,foeMove,pk2,pk1,"hp2","Foe ")
+          }
+        } else {
+          attack(foeMove,pk2,pk1,"hp2","Foe ")
+          if(pk1.hp > 0) {
+            setTimeout(attack,2500,move,pk1,pk2,"hp1","")
+          }
+        }
+        moveTurn++
       });
     }
     addHandler(btn, move, pk1, pk2);
@@ -214,45 +251,56 @@ async function createPokes() {
 }
 
 function attack(move, attacker, receiver, hp, owner) {
-  comment.innerHTML = "<p>" + owner + attacker.name + " used " + move.name + "!</p>";
-  if (Math.random() <= (move.accuracy/100)) { //check accuracy
-    receiver.hp -= calcDmg(
-                    move,
-                    attacker,
-                    receiver,
-                    checkCrit(attacker.stats),
-                    checkTE(move.type,receiver.type)
-                  )
-    /*document.getElementById(hp).innerHTML =
-      "<p>HP: " + receiver.hp + "/" + receiver.fullhp + "</p>";*/
-    let hp_percent = Math.floor(receiver.hp*100/receiver.fullhp)
-    let hp_bar = document.querySelector('#'+hp+' .bar-fill')
-    hp_bar.style.width = hp_percent+'%'
-    if(hp_percent > 50) {
-      hp_bar.style.backgroundColor = 'springgreen';
-    } else if (hp_percent > 20) {
-      hp_bar.style.backgroundColor = 'gold';
-    } else {
-      hp_bar.style.backgroundColor = 'red';
+  comment.innerHTML += "<p>" + owner + attacker.name + " used " + move.name + "!</p>";
+  if(Math.random() <= (move.accuracy/100)) { //check accuracy
+    if(move.class !== 'status') {
+      receiver.hp -= calcDmg(
+        move,
+        attacker,
+        receiver,
+        checkCrit(attacker.stats),
+        checkTE(move.type,receiver.type)
+      )
+      if(receiver.hp < 0) receiver.hp = 0
+      if(move.meta.drain !== 0) {
+        let drainhp = Math.floor(attacker.fullhp*move.meta.drain/100) 
+        attacker.hp += drainhp
+        console.log(drainhp);
+        if(attacker.hp < 0) attacker.hp = 0
+      }
+      changeBar(attacker,receiver,hp)
     }
   } else {
     setTimeout(function () {
       comment.innerHTML += "<p>Attack missed!</p>";
-    });
+    }, 1000);
   }
-  checkWinner(attacker,receiver,hp);
+  checkWinner(attacker,receiver);
 }
 
-function checkWinner(pk1,pk2,hp) {
-  let f = pk1.hp <= 0 ? pk1 : pk2.hp <= 0 ? pk2 : false;
+function checkWinner(pk1,pk2) {
+  if(pk2.hp <= 0){
+    setTimeout(function () {
+      comment.innerHTML += "<p>"+pk2.name+" has fainted!</p>";
+    }, 2000);
+  }
+  if(pk1.hp <= 0){
+    setTimeout(function () {
+      comment.innerHTML += "<p>"+pk1.name+" has fainted!</p>";
+    }, 2000);
+  }
+  /*
+  let f = pk2.hp <= 0 ? pk2 : pk1.hp <= 0 ? pk1 : false;
+  console.log('HP:'+pk1.hp+','+pk2.hp);
+  console.log(f);
   if (f != false) {
-    //alert("GAME OVER: " + f.name + " fainted!");
-    comment.innerHTML = "<p>GAME OVER: " + f.name + " fainted!</p>";
-    //document.getElementById(hp).innerHTML = "<p>HP: 0/" + f.fullhp + "</p>";
+    setTimeout(function () {
+      comment.innerHTML = "<p>"+f.name+" has fainted!</p>";
+    }, 2000)
     setTimeout(function () {
       location.reload();
-    }, 5000);
-  }
+    }, 4000)
+  }*/
 }
 
 createPokes()
