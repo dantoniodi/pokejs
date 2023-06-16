@@ -1,6 +1,8 @@
 const level = Math.floor(Math.random() * (99 - 15)) + 15 //both level (15-99)
 const ev = 0 //effort values, since both are wild pokemon their ev is zero
-const comment = document.getElementById("comment")
+const comment = document.querySelector('.comment')
+const poke1 = document.querySelector('.pk1')
+const poke2 = document.querySelector('.pk2')
 
 class Pokemon {
   constructor(name, sprite, hp, stats, type, moves) {
@@ -132,35 +134,20 @@ function changeBar(ata,rec,div) { //refatorar essa merda depois
   }
 }
 
-function checkCrit(ata,mov,gen = 1) { //check critical hit chance
-  let crit = 1
-  let critBase;
-  let critMult;
-  switch(gen) {
-    //gen 1 formula is based on pkm speed
-    case 1: 
-      critBase = Math.floor(ata.speed.base/2);
-      critMult = 8;
-      break;
-    //gen 2 onwards all pkm has same crit chance
-    case 2: 
-      critBase = 16;
-      critMult = 2;
-      break;
-  }
-  let critChance = Math.floor(Math.random() * 256)
+function checkCrit(ata,crit = 1) { //check critical hit chance
+  let critBase = Math.floor(ata.speed.base/2)
+  let critChance = Math.floor(Math.random() * 255)
   if(critBase > critChance) {
     crit = 2;
     setTimeout(function () {
       comment.innerHTML += "<p>A critical hit!</p>";
     }, 1000);
   }
-  console.log('Crit chance: '+critBase/256*100+'%')
+  console.log('Crit chance: '+critBase/256*100+'%'+', Crit: '+crit)
   return crit
 }
 
-//Check type effectiveness (attack type x enemy type)
-function checkTE(moveType,enemyType) { 
+function checkTE(moveType,enemyType) { //check type effectiveness (attack type x enemy type)
   let scale = 1;
   for (i = 0; i < enemyType.length; i++) {
     for (x = 0; x < enemyType[i][1].length; x++) {
@@ -212,19 +199,19 @@ async function spawn(bool, id = Math.floor(Math.random() * 640) + 1) {
 
 async function createPokes() {
   
-  let pk1 = await spawn(true,53);
+  let pk1 = await spawn(true);
   s1 = document.createElement("img");
   s1.src = pk1.sprite.versions['generation-v']['black-white'].animated['back_default'];
-  document.getElementById("pk1").appendChild(s1);
-  document.getElementById("if1").innerHTML = "<span>" + pk1.name + "</span> Lv." + pk1.lv
-  document.querySelector('#hp1 .text').innerHTML = "<p>HP: " + pk1.hp + "/" + pk1.fullhp + "</p>"
+  poke1.getElementsByClassName('image')[0].appendChild(s1);
+  poke1.getElementsByClassName('info').innerHTML = "<span>" + pk1.name + "</span> Lv." + pk1.lv
+  poke1.getElementsByClassName('hp').innerHTML = "<p>HP: " + pk1.hp + "/" + pk1.fullhp + "</p>"
 
   let pk2 = await spawn(false);
   s2 = document.createElement("img");
   s2.src = pk2.sprite.versions['generation-v']['black-white'].animated['front_default'];
-  document.getElementById("pk2").appendChild(s2);
-  document.getElementById("if2").innerHTML = "<span>" + pk2.name + "</span> Lv." + pk2.lv
-  document.querySelector('#hp2 .text').innerHTML = "<p>HP: " + pk2.hp + "/" + pk2.fullhp + "</p>"
+  poke2.getElementsByClassName('image')[0].appendChild(s2);
+  poke2.getElementsByClassName('info').innerHTML = "<span>" + pk2.name + "</span> Lv." + pk2.lv
+  poke2.getElementsByClassName('hp').innerHTML = "<p>HP: " + pk2.hp + "/" + pk2.fullhp + "</p>"
 
   let moveTurn = 1;
   for (i = 0; i < 4; i++) {
@@ -234,9 +221,6 @@ async function createPokes() {
   
     function addHandler(btn, move, pk1, pk2) {
       btn.addEventListener("click", function (e) {
-        document.querySelectorAll('button.btn').forEach(elem => {
-          elem.disabled = true;
-        });
         let moveOrder = 0; //set move order (1=foe,0=you)
         console.log('Speed(Pk1:'+pk1.stats.speed.actual+'|Pk2:'+pk2.stats.speed.actual+')');
         if(foeMove.priority > move.priority) { //check move prority
@@ -276,7 +260,7 @@ function attack(move, attacker, receiver, hp, owner) {
         move,
         attacker,
         receiver,
-        checkCrit(attacker.stats, move),
+        checkCrit(attacker.stats),
         checkTE(move.type,receiver.type)
       )
       if(receiver.hp < 0) receiver.hp = 0
@@ -293,34 +277,32 @@ function attack(move, attacker, receiver, hp, owner) {
       comment.innerHTML += "<p>Attack missed!</p>";
     }, 1000);
   }
-  checkWinner(attacker,receiver)
+  checkWinner(attacker,receiver);
 }
 
 function checkWinner(pk1,pk2) {
-  let f = false
   if(pk2.hp <= 0){
     setTimeout(function () {
       comment.innerHTML += "<p>"+pk2.name+" has fainted!</p>";
     }, 2000);
-    f = true
   }
   if(pk1.hp <= 0){
     setTimeout(function () {
       comment.innerHTML += "<p>"+pk1.name+" has fainted!</p>";
     }, 2000);
-    f = true
   }
-  if(f) {
+  /*
+  let f = pk2.hp <= 0 ? pk2 : pk1.hp <= 0 ? pk1 : false;
+  console.log('HP:'+pk1.hp+','+pk2.hp);
+  console.log(f);
+  if (f != false) {
+    setTimeout(function () {
+      comment.innerHTML = "<p>"+f.name+" has fainted!</p>";
+    }, 2000)
     setTimeout(function () {
       location.reload();
     }, 4000)
-  }
-  comment.scrollTop = comment.scrollHeight;
-  setTimeout(function () {
-    document.querySelectorAll('button.btn').forEach(elem => {
-      elem.disabled = false;
-    });
-  }, 3000)
+  }*/
 }
 
 createPokes()

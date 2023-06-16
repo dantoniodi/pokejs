@@ -1,4 +1,3 @@
-//Damage calculation formula
 function calcDmg(move,ata,rec,bon,crit) {
   let A = 0 //attacker stat (att or spa)
   let B = move.power //move power
