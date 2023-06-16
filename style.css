@@ -33,10 +33,12 @@ img {
 }
 #comment p {
   text-align: center;
-  text-transform: capitalize;
   font-size: smaller;
-  font-weight: bold;
   margin: 6px auto;
+}
+#comment span {
+  font-weight: bold;
+  text-transform: capitalize;
 }
 #buttons {
   height: 92px;
@@ -64,17 +66,22 @@ button {
 }
 #if1 {
   position: absolute;
-  right: 16px;
+  left: 226px;
   top: 134px;
   font-size: smaller;
+  font-weight: bolder;
+  text-transform: capitalize;
 }
 #if2 {
   position: absolute;
   left: 22px;
   bottom: 65px;
   font-size: smaller;
+  font-weight: bolder;
+  text-transform: capitalize;
 }
 span {
+  font-weight: bolder;
   text-transform: capitalize;
 }
 #hp1 {
@@ -89,13 +96,7 @@ span {
   bottom: 128px;
   width: 150px;
 }
-#hp1 .text {
-  position: absolute;
-  right: 0px;
-  top: 5px;
-  font-size: smaller;
-}
-#hp2 .text {
+.text {
   position: absolute;
   right: 0px;
   top: 5px;
@@ -138,11 +139,10 @@ progress {
   box-sizing: border-box;
   color: #111827;
   font-size: 0.75rem;
-  font-weight: 600;
   line-height: 1.25rem;
   text-align: center;
   text-decoration: none #D1D5DB solid;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
   cursor: pointer;
   text-transform: capitalize;
 }

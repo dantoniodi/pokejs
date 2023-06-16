@@ -132,20 +132,23 @@ function changeBar(ata,rec,div) { //refatorar essa merda depois
   }
 }
 
-function checkCrit(ata,mov,gen = 1) { //check critical hit chance
+function checkCrit(ata,mov,gen = 2) { //check critical hit chance
   let crit = 1
   let critBase;
-  let critMult;
   switch(gen) {
     //gen 1 formula is based on pkm speed
     case 1: 
       critBase = Math.floor(ata.speed.base/2);
-      critMult = 8;
+      if(mov.meta.crit_rate == 1) {
+        critBase = critBase * 8
+      }
       break;
     //gen 2 onwards all pkm has same crit chance
     case 2: 
       critBase = 16;
-      critMult = 2;
+      if(mov.meta.crit_rate == 1) {
+        critBase = critBase * 4
+      }
       break;
   }
   let critChance = Math.floor(Math.random() * 256)
@@ -212,7 +215,7 @@ async function spawn(bool, id = Math.floor(Math.random() * 640) + 1) {
 
 async function createPokes() {
   
-  let pk1 = await spawn(true,53);
+  let pk1 = await spawn(true);
   s1 = document.createElement("img");
   s1.src = pk1.sprite.versions['generation-v']['black-white'].animated['back_default'];
   document.getElementById("pk1").appendChild(s1);
@@ -248,17 +251,27 @@ async function createPokes() {
             moveOrder = 1
           }
         }
-        comment.innerHTML += "<p>--- Turn "+moveTurn+" ---</p>";
+        comment.innerHTML += "<p><b>--- Turn "+moveTurn+" ---</b></p>";
         console.log('Order: '+moveOrder);
-        if(moveOrder == 0){
-          attack(move,pk1,pk2,"hp1","")
-          if(pk2.hp > 0) {
-            setTimeout(attack,2500,foeMove,pk2,pk1,"hp2","Foe ")
+        if(moveOrder == 0) {
+          if(attack(move,pk1,pk2,"hp1","") > Math.floor(Math.random() * 100)) { //fling chance
+            setTimeout(function () {
+              comment.innerHTML += "<p><span class='pname'>"+pk2.name+"</span> flinched and couldn't move!</p>";
+            }, 1000);
+          } else {
+            if(pk2.hp > 0) {
+              setTimeout(attack,2500,foeMove,pk2,pk1,"hp2","Foe ")
+            }
           }
         } else {
-          attack(foeMove,pk2,pk1,"hp2","Foe ")
-          if(pk1.hp > 0) {
-            setTimeout(attack,2500,move,pk1,pk2,"hp1","")
+          if(attack(foeMove,pk2,pk1,"hp2","Foe ") > Math.floor(Math.random() * 100)) { //fling chance
+            setTimeout(function () {
+              comment.innerHTML += "<p><span class='pname'>"+pk1.name+"</span> flinched and couldn't move!</p>";
+            }, 1000);
+          } else {
+            if(pk1.hp > 0) {
+              setTimeout(attack,2500,move,pk1,pk2,"hp1","")
+            }
           }
         }
         moveTurn++
@@ -269,50 +282,81 @@ async function createPokes() {
 }
 
 function attack(move, attacker, receiver, hp, owner) {
-  comment.innerHTML += "<p>" + owner + attacker.name + " used " + move.name + "!</p>";
+  let flinch = 0;
+  comment.innerHTML += "<p><span class='pname'>" + owner + attacker.name + "</span> used <span class='mname'>" + move.name + "</span>!</p>";
   if(Math.random() <= (move.accuracy/100)) { //check accuracy
     if(move.class !== 'status') {
-      receiver.hp -= calcDmg(
+      let dmgDone = calcDmg( //inflict damage
         move,
         attacker,
         receiver,
         checkCrit(attacker.stats, move),
         checkTE(move.type,receiver.type)
       )
-      if(receiver.hp < 0) receiver.hp = 0
-      if(move.meta.drain !== 0) {
-        let drainhp = Math.floor(attacker.fullhp*move.meta.drain/100) 
-        attacker.hp += drainhp
-        console.log(drainhp);
-        if(attacker.hp < 0) attacker.hp = 0
+      if(receiver.hp > dmgDone) { //prevents HP to be negative
+        receiver.hp -= dmgDone
+      } else {
+        receiver.hp = 0;
       }
-      changeBar(attacker,receiver,hp)
+      if(move.meta.drain !== 0) { //calc draining effect
+        let drain;
+        if(move.meta.drain > 0) { //positive = drain
+          drain = Math.floor(dmgDone*move.meta.drain/100)
+          if((attacker.hp + drain) > attacker.fullhp) { //prevents overheal
+            attacker.hp = attacker.fullhp
+          } else {
+            attacker.hp += drain
+          }
+          console.log('Drain: '+drain);
+        } else { //negative = recoil
+          drain = Math.floor(attacker.fullhp*move.meta.drain/100)
+          if(attacker.hp > drain) {
+            attacker.hp += drain
+          } else {
+            attacker.hp = 0 //prevent negative HP by recoil
+          }
+          console.log('Recoil: '+drain);
+        }
+      }
     }
+    if(move.meta.healing !== 0){
+      heal = Math.floor(attacker.fullhp*move.meta.healing/100)
+      if(attacker.hp + heal > attacker.fullhp) { //prevents overheal
+        attacker.hp = attacker.fullhp
+      } else {
+        attacker.hp += heal
+      }
+      if(attacker.hp < 0) attacker.hp = 0 //prevent negative HP by recoil
+    }
+    flinch = move.meta.flinch_chance
+    changeBar(attacker,receiver,hp)
   } else {
     setTimeout(function () {
       comment.innerHTML += "<p>Attack missed!</p>";
     }, 1000);
   }
   checkWinner(attacker,receiver)
+  return flinch
 }
 
 function checkWinner(pk1,pk2) {
   let f = false
   if(pk2.hp <= 0){
     setTimeout(function () {
-      comment.innerHTML += "<p>"+pk2.name+" has fainted!</p>";
+      comment.innerHTML += "<p><span class='pname'>"+pk2.name+"</span> has fainted!</p>";
     }, 2000);
     f = true
   }
   if(pk1.hp <= 0){
     setTimeout(function () {
-      comment.innerHTML += "<p>"+pk1.name+" has fainted!</p>";
+      comment.innerHTML += "<p><span class='pname'>"+pk1.name+"</span> has fainted!</p>";
     }, 2000);
     f = true
   }
   if(f) {
     setTimeout(function () {
-      location.reload();
+      comment.innerHTML += "<p><b>--- Game Over ---</b></p>";
+      //location.reload();
     }, 4000)
   }
   comment.scrollTop = comment.scrollHeight;
