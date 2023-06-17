@@ -15,6 +15,30 @@ class Pokemon {
     this.stats = stats;
     this.type = type;
     this.moveset = moves;
+    this.evasion = {current:100,stage:0};
+    this.accuracy = {current:100,stage:0};
+  }
+  set changeAttack(newValue) {
+    Math.floor(this.stats['attack'].current *= newValue)
+    //this.stats['attack'].stage = b
+  }
+  set changeDefense(newValue) {
+    Math.floor(this.stats['defense'].current *= newValue)
+  }
+  set changeSpAttack(newValue) {
+    Math.floor(this.stats['special-attack'].current *= newValue)
+  }
+  set changeSpDefense(newValue) {
+    Math.floor(this.stats['special-defense'].current *= newValue)
+  }
+  set changeSpeed(newValue) {
+    Math.floor(this.stats['speed'].current *= newValue)
+  }
+  set changeEvasion(newValue) {
+    Math.floor(this.stats['evasion'].current *= newValue)
+  }
+  set changeAccuracy(newValue) {
+    Math.floor(this.stats['accuracy'].current *= newValue)
   }
 }
 
@@ -66,8 +90,8 @@ const setMovePool = async(pool) => {
         'class': moveInfo.damage_class.name,
         'power': moveInfo.power != null ? moveInfo.power : 0,
         'accuracy': moveInfo.accuracy != null ? moveInfo.accuracy : 100,
-        'priority': moveInfo.priority,
-        'changes': moveInfo.stat_changes,
+        'priority': moveInfo.priority != null ? moveInfo.priority : 0,
+        'changes': moveInfo.stat_changes.length === 0 ? null: moveInfo.stat_changes,
         'meta': moveInfo.meta
     }, i)
   }
@@ -88,8 +112,9 @@ async function calcStat(stats) {
     let N = stats[i].stat.name === nature.increased ? 1.1 : stats[i].stat.name === nature.decreased ? 0.9 : 1
     pokeStats[stats[i].stat.name] = {
       'base': stats[i].base_stat,
-      'actual': Math.floor(((0.01 * (2 * stats[i].base_stat + iv + Math.floor(0.25 * ev)) * level) + 5) * N),
-      'old': Math.floor(0.01 * (2 * stats[i].base_stat + iv + Math.floor(0.25 * ev)) * level) + 5
+      'initial': Math.floor(((0.01 * (2 * stats[i].base_stat + iv + Math.floor(0.25 * ev)) * level) + 5) * N),
+      'current': Math.floor(((0.01 * (2 * stats[i].base_stat + iv + Math.floor(0.25 * ev)) * level) + 5) * N),
+      'stage': 0
     }
   }
   return pokeStats
@@ -203,7 +228,7 @@ async function spawn(bool, id = Math.floor(Math.random() * 640) + 1) {
 
 async function createPokes() {
   
-  const pk1 = await spawn(true)
+  const pk1 = await spawn(true,123)
   s1 = document.createElement("img");
   s1.src = pk1.sprite.versions['generation-v']['black-white'].animated['back_default'];
   document.getElementById("pk1").appendChild(s1);
@@ -228,13 +253,13 @@ async function createPokes() {
     btn.addEventListener("click", function (e) {
       
       buttons.forEach(elem => { elem.disabled = true }) //disable buttons after a click
-      console.log('Speed-check: '+pk1.stats.speed.actual+', '+pk2.stats.speed.actual);
+      console.log('Speed-check: '+pk1.stats.speed.current+', '+pk2.stats.speed.current);
       
       let foeMove = pk2.moveset[Math.floor(Math.random() * 3)]
       let moveOrder = ( //set move order (1=foe,0=you)
         foeMove.priority > move.priority ? 1 : //check foe move prority
         foeMove.priority < move.priority ? 0 : //check your move prority
-        pk2.stats.speed.actual > pk1.stats.speed.actual ? 1 : 0 //check pkm speed
+        pk2.stats.speed.current > pk1.stats.speed.current ? 1 : 0 //check pkm speed
       );
       
       comment.innerHTML += "<p><b>--- Turn "+moveTurn+" ---</b></p>";
@@ -270,6 +295,7 @@ async function createPokes() {
 function attack(move, attacker, receiver, order) {
   let flinch = 0;
   comment.innerHTML += "<p><span class='pname'>" + attacker.name + "</span> used <span class='mname'>" + move.name + "</span>!</p>";
+  console.log(attacker.name+' uses '+move.name);
   if(Math.random() <= (move.accuracy/100)) { //check accuracy
     if(move.class !== 'status') {
       let dmgDone = calcDmg( //inflict damage
@@ -320,6 +346,21 @@ function attack(move, attacker, receiver, order) {
     setTimeout(function () {
       comment.innerHTML += "<p>Attack missed!</p>";
     }, 1000);
+  }
+  if(move.changes != null && move.changes != undefined) {
+    let stageVar = move.changes[0].change
+    let statMult = stageVar > 0 ? (2 + stageVar)/2 : 2/(2-(stageVar))
+    switch(move.changes[0].stat.name) {
+      case 'attack': attacker.changeAttack = statMult
+      case 'defense': attacker.changeDefense = statMult
+      case 'special-attack': attacker.changeSpAttack = statMult
+      case 'special-defense': attacker.changeSpDefense = statMult
+      case 'speed': attacker.changeSpeed = statMult
+      case 'evasion': attacker.changeEvasion = statMult
+      case 'accuracy': attacker.changeAccuracy = statMult
+    }
+    console.log(statMult);
+    console.log(attacker.stats);
   }
   //checkWinner(attacker,receiver)
   return flinch //return fling chance from move, default = 0

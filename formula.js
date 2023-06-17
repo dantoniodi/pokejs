@@ -10,12 +10,12 @@ function calcDmg(move,ata,rec,bon,crit) {
   let Z = Math.floor(Math.random() * (255 - 217)) + 217 //random factor
   switch(move.class) {
     case 'physical': 
-      A = ata.stats['attack'].actual;
-      D = rec.stats['defense'].actual;
+      A = ata.stats['attack'].current;
+      D = rec.stats['defense'].current;
       break;
     case 'special': 
-      A = ata.stats['special-attack'].actual;
-      D = rec.stats['special-defense'].actual;
+      A = ata.stats['special-attack'].current;
+      D = rec.stats['special-defense'].current;
       break;
   }
   let stab = ata.type.map(typeInfo => typeInfo[0])
