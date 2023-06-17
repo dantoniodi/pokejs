@@ -67,18 +67,14 @@ button {
 #if1 {
   position: absolute;
   left: 226px;
-  top: 134px;
+  top: 132px;
   font-size: smaller;
-  font-weight: bolder;
-  text-transform: capitalize;
 }
 #if2 {
   position: absolute;
   left: 22px;
-  bottom: 65px;
+  bottom: 66px;
   font-size: smaller;
-  font-weight: bolder;
-  text-transform: capitalize;
 }
 span {
   font-weight: bolder;
@@ -104,12 +100,12 @@ span {
 }
 #pk1 {
   position: absolute;
-  left: 80px;
+  left: 70px;
   bottom: 30px;
 }
 #pk2 {
   position: absolute;
-  right: 70px;
+  right: 50px;
   bottom: 160px;
 }
 .bar {
@@ -131,6 +127,9 @@ progress {
   accent-color: springgreen;
   height: 20px;
   transition: all 1s ease-out;
+}
+::-webkit-progress-value {
+  transition: all 1s;
 }
 .btn {
   background-color: #FFFFFF;

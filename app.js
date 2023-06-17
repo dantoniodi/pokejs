@@ -1,6 +1,9 @@
 const level = Math.floor(Math.random() * (99 - 15)) + 15 //both level (15-99)
 const ev = 0 //effort values, since both are wild pokemon their ev is zero
+const buttons = document.querySelectorAll('button.btn')
 const comment = document.getElementById("comment")
+const hp_bar1 = document.getElementById("hp1")
+const hp_bar2 = document.getElementById("hp2")
 
 class Pokemon {
   constructor(name, sprite, hp, stats, type, moves) {
@@ -92,74 +95,59 @@ async function calcStat(stats) {
   return pokeStats
 }
 
-function changeBar(ata,rec,div) { //refatorar essa merda depois
-  let hp_bar = [];
-  let hp_text = [];
-  let hp_value = [];
-  let hp_percent = [];
+function changeBar(pk1,pk2,ord) {
   
-  if(div == 'hp1'){
-    hp_bar[0] = document.querySelector('#hp1 .bar-fill')
-    hp_bar[1] = document.querySelector('#hp2 .bar-fill')
-    hp_text[0] = document.querySelector('#hp1 .text')
-    hp_text[1] = document.querySelector('#hp2 .text')
-  } else {
-    hp_bar[0] = document.querySelector('#hp2 .bar-fill')
-    hp_bar[1] = document.querySelector('#hp1 .bar-fill')
-    hp_text[0] = document.querySelector('#hp2 .text')
-    hp_text[1] = document.querySelector('#hp1 .text')
-  }
-  hp_value[0] = ata
-  hp_value[1] = rec
-  hp_percent[0] = Math.floor(ata.hp*100/ata.fullhp)
-  hp_percent[1] = Math.floor(rec.hp*100/rec.fullhp)
+  let hp = (ord == 0) ? [pk1.hp,pk2.hp] : [pk2.hp,pk1.hp]
+  let maxhp = (ord == 0) ? [pk1.fullhp,pk2.fullhp] : [pk2.fullhp,pk1.fullhp]
+  let hp_div = [hp_bar1,hp_bar2]
   
-  
-  for(let i=0; i<hp_bar.length; i++) {
-    if(hp_percent[i] === 100) {
-      hp_bar[i].style.backgroundColor = 'springgreen';
-    } else if(hp_percent[i] > 50) {
-      hp_bar[i].style.backgroundColor = 'chartreuse';
-    } else if (hp_percent[i] > 20) {
-      hp_bar[i].style.backgroundColor = 'gold';
-    } else if (hp_percent[i] > 0){
-      hp_bar[i].style.backgroundColor = 'red';
+  for(let i=0; i < hp_div.length; i++) {
+    let hp_percent = Math.floor(hp[i]*100/maxhp[i])
+    if(hp_percent === 100) {
+      hp_div[i].getElementsByClassName('bar-fill')[0].style.backgroundColor = 'springgreen'
+    } else if(hp_percent > 50) {
+      hp_div[i].getElementsByClassName('bar-fill')[0].style.backgroundColor = 'chartreuse'
+    } else if (hp_percent > 20) {
+      hp_div[i].getElementsByClassName('bar-fill')[0].style.backgroundColor = 'gold'
     } else {
-      hp_percent[i] = 0
+      hp_div[i].getElementsByClassName('bar-fill')[0].style.backgroundColor = 'red'
     }
-    hp_bar[i].style.width = hp_percent[i]+'%'
-    hp_text[i].innerHTML = "<p>HP: " + hp_value[i].hp + "/" + hp_value[i].fullhp + "</p>";
+    hp_div[i].getElementsByClassName('bar-fill')[0].style.width = hp_percent+'%'
+    hp_div[i].getElementsByClassName('text')[0].innerHTML = "<p>HP: "+hp[i]+"/"+maxhp[i]+"</p>";
   }
 }
 
 function checkCrit(ata,mov,gen = 2) { //check critical hit chance
-  let crit = 1
-  let critBase;
+  
+  let critMult = 2
+  let critRate = mov.meta === null ? 0 : mov.meta.crit_rate
+  let pkmSpeed = Math.floor(ata.speed.base/2)
+  let critChance;
+
   switch(gen) {
     //gen 1 formula is based on pkm speed
-    case 1: 
-      critBase = Math.floor(ata.speed.base/2);
-      if(mov.meta.crit_rate == 1) {
-        critBase = critBase * 8
-      }
+    case 1:
+      critChance = critRate > 0 ? pkmSpeed*8 : pkmSpeed
       break;
     //gen 2 onwards all pkm has same crit chance
     case 2: 
-      critBase = 16;
-      if(mov.meta.crit_rate == 1) {
-        critBase = critBase * 4
-      }
+      critChance = critRate > 0 ? 16*4 : 16
+      break;
+    //gen 6 onwards crit chance and damage got nerfs
+    case 6:
+      critChance = critRate > 0 ? 16*2 : 16
+      critMult = 1.5
       break;
   }
-  let critChance = Math.floor(Math.random() * 256)
-  if(critBase > critChance) {
-    crit = 2;
+  if(critChance > Math.floor(Math.random() * 256)) {
     setTimeout(function () {
       comment.innerHTML += "<p>A critical hit!</p>";
     }, 1000);
+  } else {
+    critMult = 1
   }
-  console.log('Crit chance: '+critBase/256*100+'%')
-  return crit
+  console.log('Crit chance: '+critChance/256*100+'%, Mult: '+critMult)
+  return critMult
 }
 
 //Check type effectiveness (attack type x enemy type)
@@ -202,7 +190,7 @@ async function spawn(bool, id = Math.floor(Math.random() * 640) + 1) {
               await getType(p.types),
               await setMovePool(p.moves),
             )
-  //console.log(pkm);
+  console.log(pkm);
   if (bool) {
     for (i = 0; i < 4; i++) {
       let moveText = '<span class="move-name">'+pkm.moveset[i].name+'</span> ('+pkm.moveset[i].type+')<br>'
@@ -215,75 +203,73 @@ async function spawn(bool, id = Math.floor(Math.random() * 640) + 1) {
 
 async function createPokes() {
   
-  let pk1 = await spawn(true);
+  const pk1 = await spawn(true)
   s1 = document.createElement("img");
   s1.src = pk1.sprite.versions['generation-v']['black-white'].animated['back_default'];
   document.getElementById("pk1").appendChild(s1);
   document.getElementById("if1").innerHTML = "<span>" + pk1.name + "</span> Lv." + pk1.lv
   document.querySelector('#hp1 .text').innerHTML = "<p>HP: " + pk1.hp + "/" + pk1.fullhp + "</p>"
 
-  let pk2 = await spawn(false);
+  const pk2 = await spawn(false);
   s2 = document.createElement("img");
   s2.src = pk2.sprite.versions['generation-v']['black-white'].animated['front_default'];
   document.getElementById("pk2").appendChild(s2);
   document.getElementById("if2").innerHTML = "<span>" + pk2.name + "</span> Lv." + pk2.lv
   document.querySelector('#hp2 .text').innerHTML = "<p>HP: " + pk2.hp + "/" + pk2.fullhp + "</p>"
 
-  let moveTurn = 1;
+  let moveTurn = 1
   for (i = 0; i < 4; i++) {
-    let btn = document.getElementById("m" + i);
-    let move = pk1.moveset[i];
-    let foeMove = pk2.moveset[Math.floor(Math.random() * 3)]
-  
-    function addHandler(btn, move, pk1, pk2) {
-      btn.addEventListener("click", function (e) {
-        document.querySelectorAll('button.btn').forEach(elem => {
-          elem.disabled = true;
-        });
-        let moveOrder = 0; //set move order (1=foe,0=you)
-        console.log('Speed(Pk1:'+pk1.stats.speed.actual+'|Pk2:'+pk2.stats.speed.actual+')');
-        if(foeMove.priority > move.priority) { //check move prority
-          moveOrder = 1
-        } else if(foeMove.priority < move.priority) {
-          moveOrder = 0
-        } else {
-          if(pk2.stats.speed.actual > pk1.stats.speed.actual) { //check pkm speed
-            moveOrder = 1
-          }
-        }
-        comment.innerHTML += "<p><b>--- Turn "+moveTurn+" ---</b></p>";
-        console.log('Order: '+moveOrder);
-        if(moveOrder == 0) {
-          if(attack(move,pk1,pk2,"hp1","") > Math.floor(Math.random() * 100)) { //fling chance
-            setTimeout(function () {
-              comment.innerHTML += "<p><span class='pname'>"+pk2.name+"</span> flinched and couldn't move!</p>";
-            }, 1000);
-          } else {
-            if(pk2.hp > 0) {
-              setTimeout(attack,2500,foeMove,pk2,pk1,"hp2","Foe ")
-            }
-          }
-        } else {
-          if(attack(foeMove,pk2,pk1,"hp2","Foe ") > Math.floor(Math.random() * 100)) { //fling chance
-            setTimeout(function () {
-              comment.innerHTML += "<p><span class='pname'>"+pk1.name+"</span> flinched and couldn't move!</p>";
-            }, 1000);
-          } else {
-            if(pk1.hp > 0) {
-              setTimeout(attack,2500,move,pk1,pk2,"hp1","")
-            }
-          }
-        }
-        moveTurn++
-      });
-    }
+    let btn = document.getElementById("m" + i)
+    let move = pk1.moveset[i]
     addHandler(btn, move, pk1, pk2);
+  }
+
+  function addHandler(btn, move, pk1, pk2) {
+    btn.addEventListener("click", function (e) {
+      
+      buttons.forEach(elem => { elem.disabled = true }) //disable buttons after a click
+      console.log('Speed-check: '+pk1.stats.speed.actual+', '+pk2.stats.speed.actual);
+      
+      let foeMove = pk2.moveset[Math.floor(Math.random() * 3)]
+      let moveOrder = ( //set move order (1=foe,0=you)
+        foeMove.priority > move.priority ? 1 : //check foe move prority
+        foeMove.priority < move.priority ? 0 : //check your move prority
+        pk2.stats.speed.actual > pk1.stats.speed.actual ? 1 : 0 //check pkm speed
+      );
+      
+      comment.innerHTML += "<p><b>--- Turn "+moveTurn+" ---</b></p>";
+      //console.log('Order: '+moveOrder);
+      
+      if(moveOrder == 0) {
+        if(attack(move,pk1,pk2,0) > Math.floor(Math.random() * 100)) { //fling chance
+          setTimeout(function () {
+            comment.innerHTML += "<p><span class='pname'>"+pk2.name+"</span> flinched and couldn't move!</p>";
+          }, 1000);
+        } else {
+          if(pk2.hp > 0) {
+            setTimeout(attack,2500,foeMove,pk2,pk1,1)
+          }
+        }
+      } else {
+        if(attack(foeMove,pk2,pk1,1) > Math.floor(Math.random() * 100)) { //fling chance
+          setTimeout(function () {
+            comment.innerHTML += "<p><span class='pname'>"+pk1.name+"</span> flinched and couldn't move!</p>";
+          }, 1000);
+        } else {
+          if(pk1.hp > 0) {
+            setTimeout(attack,2500,move,pk1,pk2,0)
+          }
+        }
+      }
+      checkWinner(pk1,pk2)
+      moveTurn++
+    });
   }
 }
 
-function attack(move, attacker, receiver, hp, owner) {
+function attack(move, attacker, receiver, order) {
   let flinch = 0;
-  comment.innerHTML += "<p><span class='pname'>" + owner + attacker.name + "</span> used <span class='mname'>" + move.name + "</span>!</p>";
+  comment.innerHTML += "<p><span class='pname'>" + attacker.name + "</span> used <span class='mname'>" + move.name + "</span>!</p>";
   if(Math.random() <= (move.accuracy/100)) { //check accuracy
     if(move.class !== 'status') {
       let dmgDone = calcDmg( //inflict damage
@@ -298,7 +284,7 @@ function attack(move, attacker, receiver, hp, owner) {
       } else {
         receiver.hp = 0;
       }
-      if(move.meta.drain !== 0) { //calc draining effect
+      if(move.meta != null && move.meta.drain != 0) { //calc draining effect
         let drain;
         if(move.meta.drain > 0) { //positive = drain
           drain = Math.floor(dmgDone*move.meta.drain/100)
@@ -319,7 +305,7 @@ function attack(move, attacker, receiver, hp, owner) {
         }
       }
     }
-    if(move.meta.healing !== 0){
+    if(move.meta != null && move.meta.healing > 0){
       heal = Math.floor(attacker.fullhp*move.meta.healing/100)
       if(attacker.hp + heal > attacker.fullhp) { //prevents overheal
         attacker.hp = attacker.fullhp
@@ -328,43 +314,42 @@ function attack(move, attacker, receiver, hp, owner) {
       }
       if(attacker.hp < 0) attacker.hp = 0 //prevent negative HP by recoil
     }
-    flinch = move.meta.flinch_chance
-    changeBar(attacker,receiver,hp)
+    if(move.meta !== null) flinch = move.meta.flinch_chance
+    changeBar(attacker,receiver,order)
   } else {
     setTimeout(function () {
       comment.innerHTML += "<p>Attack missed!</p>";
     }, 1000);
   }
-  checkWinner(attacker,receiver)
-  return flinch
+  //checkWinner(attacker,receiver)
+  return flinch //return fling chance from move, default = 0
 }
 
 function checkWinner(pk1,pk2) {
-  let f = false
-  if(pk2.hp <= 0){
-    setTimeout(function () {
-      comment.innerHTML += "<p><span class='pname'>"+pk2.name+"</span> has fainted!</p>";
-    }, 2000);
-    f = true
+  let ko = false
+  let f = new Array(pk1,pk2)
+  for(let i=0; i<f.length; i++){
+    if(f[i].hp <= 0) {
+      setTimeout(function () {
+        comment.innerHTML += "<p><span class='pname'>"+f[i].name+"</span> has fainted!</p>";
+      }, 2000);
+      ko = true
+    }
   }
-  if(pk1.hp <= 0){
-    setTimeout(function () {
-      comment.innerHTML += "<p><span class='pname'>"+pk1.name+"</span> has fainted!</p>";
-    }, 2000);
-    f = true
-  }
-  if(f) {
+  if(ko) {
+    buttons.forEach(elem => { elem.disabled = true })
     setTimeout(function () {
       comment.innerHTML += "<p><b>--- Game Over ---</b></p>";
-      //location.reload();
-    }, 4000)
+    }, 3000)
+    setTimeout(function () {
+      location.reload();
+    }, 5000)
+  } else {
+    setTimeout(function () {
+      buttons.forEach(elem => { elem.disabled = false })
+    }, 3000)
   }
   comment.scrollTop = comment.scrollHeight;
-  setTimeout(function () {
-    document.querySelectorAll('button.btn').forEach(elem => {
-      elem.disabled = false;
-    });
-  }, 3000)
 }
 
 createPokes()

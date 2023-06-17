@@ -24,6 +24,6 @@ function calcDmg(move,ata,rec,bon,crit) {
   }
   baseDmg = ((2*L*C/5+2)*B*A/D)/50 //never changes
   let DMG = Math.floor(((baseDmg+2)*X*Y)*Z/255) //gen 1 formula
-  console.log('Dmg dealt: '+DMG)
+  console.log('Damage(base|total): '+Math.floor(baseDmg)+', '+DMG)
   return DMG
 }
