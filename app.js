@@ -15,30 +15,18 @@ class Pokemon {
     this.stats = stats;
     this.type = type;
     this.moveset = moves;
-    this.evasion = {current:100,stage:0};
-    this.accuracy = {current:100,stage:0};
+    this.stats.evasion = {current:100,stage:0};
+    this.stats.accuracy = {current:100,stage:0};
   }
-  set changeAttack(newValue) {
-    Math.floor(this.stats['attack'].current *= newValue)
-    //this.stats['attack'].stage = b
-  }
-  set changeDefense(newValue) {
-    Math.floor(this.stats['defense'].current *= newValue)
-  }
-  set changeSpAttack(newValue) {
-    Math.floor(this.stats['special-attack'].current *= newValue)
-  }
-  set changeSpDefense(newValue) {
-    Math.floor(this.stats['special-defense'].current *= newValue)
-  }
-  set changeSpeed(newValue) {
-    Math.floor(this.stats['speed'].current *= newValue)
-  }
-  set changeEvasion(newValue) {
-    Math.floor(this.stats['evasion'].current *= newValue)
-  }
-  set changeAccuracy(newValue) {
-    Math.floor(this.stats['accuracy'].current *= newValue)
+  changeStats(i) { //stats changes uses 2/2 basis (acc and evasion uses 3/3)
+    let statMult = 1
+    if(i.stat.name == 'evasion' || i.stat.name == 'accuracy') {
+      statMult = i.change > 0 ? (3+i.change)/3 : 3/(3-(i.change))
+    } else {
+      statMult = i.change > 0 ? (2+i.change)/2 : 2/(2-(i.change))
+    }
+    Math.floor(this.stats[i.stat.name].current *= statMult) 
+    this.stats[i.stat.name].stage += i.change
   }
 }
 
@@ -331,14 +319,14 @@ function attack(move, attacker, receiver, order) {
         }
       }
     }
-    if(move.meta != null && move.meta.healing > 0){
+    if(move.meta != null && move.meta.healing > 0) {
       heal = Math.floor(attacker.fullhp*move.meta.healing/100)
       if(attacker.hp + heal > attacker.fullhp) { //prevents overheal
         attacker.hp = attacker.fullhp
       } else {
         attacker.hp += heal
       }
-      if(attacker.hp < 0) attacker.hp = 0 //prevent negative HP by recoil
+      console.log('Heal: '+heal);
     }
     if(move.meta !== null) flinch = move.meta.flinch_chance
     changeBar(attacker,receiver,order)
@@ -347,20 +335,9 @@ function attack(move, attacker, receiver, order) {
       comment.innerHTML += "<p>Attack missed!</p>";
     }, 1000);
   }
-  if(move.changes != null && move.changes != undefined) {
-    let stageVar = move.changes[0].change
-    let statMult = stageVar > 0 ? (2 + stageVar)/2 : 2/(2-(stageVar))
-    switch(move.changes[0].stat.name) {
-      case 'attack': attacker.changeAttack = statMult
-      case 'defense': attacker.changeDefense = statMult
-      case 'special-attack': attacker.changeSpAttack = statMult
-      case 'special-defense': attacker.changeSpDefense = statMult
-      case 'speed': attacker.changeSpeed = statMult
-      case 'evasion': attacker.changeEvasion = statMult
-      case 'accuracy': attacker.changeAccuracy = statMult
-    }
-    console.log(statMult);
-    console.log(attacker.stats);
+  if(move.changes != null) {
+    attacker.changeStats(move.changes[0])
+    console.log(attacker.stats)
   }
   //checkWinner(attacker,receiver)
   return flinch //return fling chance from move, default = 0
@@ -369,7 +346,7 @@ function attack(move, attacker, receiver, order) {
 function checkWinner(pk1,pk2) {
   let ko = false
   let f = new Array(pk1,pk2)
-  for(let i=0; i<f.length; i++){
+  for(let i=0; i<f.length; i++) {
     if(f[i].hp <= 0) {
       setTimeout(function () {
         comment.innerHTML += "<p><span class='pname'>"+f[i].name+"</span> has fainted!</p>";
@@ -382,9 +359,9 @@ function checkWinner(pk1,pk2) {
     setTimeout(function () {
       comment.innerHTML += "<p><b>--- Game Over ---</b></p>";
     }, 3000)
-    setTimeout(function () {
+    /*setTimeout(function () {
       location.reload();
-    }, 5000)
+    }, 5000)*/
   } else {
     setTimeout(function () {
       buttons.forEach(elem => { elem.disabled = false })
