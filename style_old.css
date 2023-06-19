@@ -5,22 +5,6 @@
 }
 .title {
   text-align: center;
-  position: relative;
-  -webkit-box-reflect: below -10px linear-gradient(transparent, rgba(0,0,0,.2));
-  font-size: 40px;
-}
-.title span {
-  position: relative;
-  display: inline-block;
-  animation: waviy 1s infinite;
-  animation-delay: calc(.1s * var(--i));
-  margin: 0 -5px;
-}
-.subtitle {
-  margin-top: 40px;
-  margin-bottom: 20px;
-  text-align: center;
-  font-size: 26px;
 }
 .screen {
   width: 660px;
@@ -35,17 +19,6 @@
   max-height: 100%;
   height: 400px;
   width: 400px;
-}
-.log {
-  width: 260px;
-  height: 400px;
-  background-color: wheat;
-  overflow: auto;
-}
-.log p {
-  text-align: center;
-  font-size: smaller;
-  margin: 6px auto;
 }
 .comment {
   width: 260px;
@@ -82,19 +55,9 @@
   height: 50px;
 }
 .poke {
+  position: relative;
   white-space: nowrap;
-  text-align: center;
   height: 120px;
-}
-#pk1 {
-  position: absolute;
-  left: 45px;
-  top: 185px;
-}
-#pk2 {
-  position: absolute;
-  right: 50px;
-  top: 70px;
 }
 .image {
   width: 120px;
@@ -102,6 +65,16 @@
   max-width: 180px;
   white-space: nowrap;
   margin: 0 auto;
+}
+#pk1 .image {
+  position: absolute;
+  left: 60px;
+  top: 15px;
+}
+#pk2 .image {
+  position: absolute;
+  right: 20px;
+  top: 25px;
 }
 .image img{
   vertical-align: middle;
@@ -119,28 +92,24 @@
   font-size: smaller;
 }
 #pk1 .info {
-  left: 181px;
-  top: 30px;
+  left: 230px;
+  top: 45px;
 }
 #pk2 .info {
-  left: -207px;
-  top: 7px;
+  left: 25px;
+  top: 25px;
 }
 #pk1 .hp {
   position: absolute;
-  left: 180px;
-  top: 48px;
+  right: 18px;
+  top: 62px;
   width: 150px;
 }
 #pk2 .hp {
   position: absolute;
-  right: 172px;
-  top: 25px;
+  left: 22px;
+  top: 44px;
   width: 150px;
-}
-.mname, .pname {
-  font-size: 14px;
-  font-weight: bolder;
 }
 .text {
   position: absolute;
@@ -196,44 +165,4 @@ progress {
 }
 ::-webkit-progress-value {
   transition: all 1s;
-}
-.subword {
-  animation: color-animation 4s linear infinite;
-}
-.sub1 {
-  --color-1: #DF8453;
-  --color-2: #3D8DAE;
-  --color-3: #E4A9A8;
-}
-.sub2 {
-  --color-1: #DBAD4A;
-  --color-2: #ACCFCB;
-  --color-3: #17494D;
-}
-.sub3 {
-  --color-1: #ACCFCB;
-  --color-2: #E4A9A8;
-  --color-3: #ACCFCB;
-}
-.sub4 {
-  --color-1: #3D8DAE;
-  --color-2: #DF8453;
-  --color-3: #E4A9A8;
-}
-@keyframes color-animation {
-  0%    {color: var(--color-1)}
-  32%   {color: var(--color-1)}
-  33%   {color: var(--color-2)}
-  65%   {color: var(--color-2)}
-  66%   {color: var(--color-3)}
-  99%   {color: var(--color-3)}
-  100%  {color: var(--color-1)}
-}
-@keyframes waviy {
-  0%,40%,100% {
-    transform: translateY(0)
-  }
-  20% {
-    transform: translateY(-20px)
-  }
 }

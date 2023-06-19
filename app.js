@@ -1,9 +1,9 @@
 const level = Math.floor(Math.random() * (99 - 15)) + 15 //both level (15-99)
 const ev = 0 //effort values, since both are wild pokemon their ev is zero
 const buttons = document.querySelectorAll('button.btn')
-const comment = document.getElementById("comment")
-const hp_bar1 = document.getElementById("hp1")
-const hp_bar2 = document.getElementById("hp2")
+const comment = document.querySelector(".comment")
+const hp_bar = [document.querySelector("#pk1 .bar"),document.querySelector("#pk2 .bar")]
+const hp_text = [document.querySelector("#pk1 .text"),document.querySelector("#pk2 .text")]
 
 class Pokemon {
   constructor(name, sprite, hp, stats, type, moves) {
@@ -91,14 +91,14 @@ const getMove = url => fetch(url).then((resp) => resp.json())
 
 const setMovePool = async(pool) => {
   let movePool = new Array(4)
-  //let moveNum = new Set()
-  let moveNum = new Set(['slash','sand-attack','fury-cutter','minimize'])
-  /*while(moveNum.size < 4) { //add random numbers to an unique collection(set)
+  let moveNum = new Set()
+  //let moveNum = new Set(['slash','sand-attack','fury-cutter','minimize'])
+  while(moveNum.size < 4) { //add random numbers to an unique collection(set)
     moveNum.add(Math.floor(Math.random() * pool.length))
-  }*/
+  }
   for(let i=0; i<4; i++) {
-    //let moveInfo = await getMove(pool[Array.from(moveNum)[i]].move.url)
-    let moveInfo = await getMove('https://pokeapi.co/api/v2/move/'+Array.from(moveNum)[i])
+    let moveInfo = await getMove(pool[Array.from(moveNum)[i]].move.url)
+    // let moveInfo = await getMove('https://pokeapi.co/api/v2/move/'+Array.from(moveNum)[i])
     movePool.fill({
         'pp': moveInfo.pp,
         'name': moveInfo.name,
@@ -141,21 +141,20 @@ function changeBar(pk1,pk2,ord) {
   
   let hp = (ord == 0) ? [pk1.hp,pk2.hp] : [pk2.hp,pk1.hp]
   let maxhp = (ord == 0) ? [pk1.fullhp,pk2.fullhp] : [pk2.fullhp,pk1.fullhp]
-  let hp_div = [hp_bar1,hp_bar2]
   
-  for(let i=0; i < hp_div.length; i++) {
+  for(let i=0; i < hp_bar.length; i++) {
     let hp_percent = Math.floor(hp[i]*100/maxhp[i])
     if(hp_percent === 100) {
-      hp_div[i].getElementsByClassName('bar-fill')[0].style.backgroundColor = 'springgreen'
+      hp_bar[i].style.backgroundColor = 'springgreen'
     } else if(hp_percent > 50) {
-      hp_div[i].getElementsByClassName('bar-fill')[0].style.backgroundColor = 'chartreuse'
+      hp_bar[i].style.backgroundColor = 'chartreuse'
     } else if (hp_percent > 20) {
-      hp_div[i].getElementsByClassName('bar-fill')[0].style.backgroundColor = 'gold'
+      hp_bar[i].style.backgroundColor = 'gold'
     } else {
-      hp_div[i].getElementsByClassName('bar-fill')[0].style.backgroundColor = 'red'
+      hp_bar[i].style.backgroundColor = 'red'
     }
-    hp_div[i].getElementsByClassName('bar-fill')[0].style.width = hp_percent+'%'
-    hp_div[i].getElementsByClassName('text')[0].innerHTML = "<p>HP: "+hp[i]+"/"+maxhp[i]+"</p>";
+    hp_bar[i].style.width = hp_percent+'%'
+    hp_text[i].innerHTML = "<p>HP: "+hp[i]+"/"+maxhp[i]+"</p>";
   }
 }
 
@@ -246,16 +245,16 @@ async function spawn(bool, id = Math.floor(Math.random() * 640) + 1) {
 async function createPokes() {
   
   const pk1 = await spawn(true)
-  let img1 = pk1.sprite.versions['generation-v']['black-white'].animated['back_default'];
-  document.querySelector("#pk1 img").src = img1;
-  document.getElementById("if1").innerHTML = "<span class='pname'>"+pk1.name+"</span> Lv."+pk1.lv
-  document.querySelector('#hp1 .text').innerHTML = "<p>HP: "+pk1.hp+"/"+pk1.fullhp+"</p>"
+  let img1 = pk1.sprite;
+  document.querySelector("#pk1 img").src = img1.versions['generation-v']['black-white'].animated['back_default'];
+  document.querySelector('#pk1 .info').innerHTML = "<span class='pname'>"+pk1.name+"</span> Lv."+pk1.lv
+  document.querySelector('#pk1 .hp .text').innerHTML = "<p>HP: "+pk1.hp+"/"+pk1.fullhp+"</p>"
 
   const pk2 = await spawn(false);
-  let img2 = pk2.sprite.versions['generation-v']['black-white'].animated['front_default'];
-  document.querySelector("#pk2 img").src = img2;
-  document.getElementById("if2").innerHTML = "<span class='pname'>"+pk2.name+"</span> Lv."+pk2.lv
-  document.querySelector('#hp2 .text').innerHTML = "<p>HP: "+pk2.hp+"/"+pk2.fullhp+"</p>"
+  let img2 = pk2.sprite;
+  document.querySelector("#pk2 img").src = img2.versions['generation-v']['black-white'].animated['front_default'];
+  document.querySelector("#pk2 .info").innerHTML = "<span class='pname'>"+pk2.name+"</span> Lv."+pk2.lv
+  document.querySelector('#pk2 .hp .text').innerHTML = "<p>HP: "+pk2.hp+"/"+pk2.fullhp+"</p>"
 
   let moveTurn = 1
   for (i = 0; i < 4; i++) {

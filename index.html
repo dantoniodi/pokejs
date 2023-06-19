@@ -1,56 +1,69 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css" />
-  <title>PokeJS</title>
-</head>
-<body>
-  <table class="table">
-    <tr>
-      <td id="if1"></td>
-      <td id="if2"></td>
-    </tr>
-    <tr>
-    <td id="hp1">
-      <!-- <progress value="100" max="100"></progress> -->
-      <div class="bar">
-        <span class="bar-fill" style="width: 100%"></span>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <title>PokeJS - Random Battle Simulator</title>
+  </head>
+  <body>
+    <h1 class="title">
+      <span style="--i:1">P</span>
+      <span style="--i:2">o</span>
+      <span style="--i:3">k</span>
+      <span style="--i:4">é</span>
+      <span style="--i:5">J</span>
+      <span style="--i:6">S</span> - Random Battle Simulator
+    </h1>
+    <h3 class="subtitle">
+      <i>
+        &laquo;
+        <span class="subword sub1">made</span>
+        <span class="subword sub2">purely</span>
+        <span class="subword sub3">on</span>
+        <span class="subword sub4">JavaScript</span>
+        with <a href="https://pokeapi.co/" target="_blank">PokéAPI</a> 
+        &raquo;
+      </i>
+    </h3>
+    <div class="screen">
+      <!-- <div class="log"></div> -->
+      <div class="panel">
+        <div class="clear"></div>
+        <div class="poke" id="pk2">
+          <div class="info"></div>
+          <div class="hp">
+            <!-- <progress value="100" max="100"></progress> -->
+            <span class="bar" style="width: 100%"></span>
+            <span class="text"></span>
+          </div>
+          <div class="image">
+            <span class="middle"></span>
+            <img src="" alt="Poke2" />
+          </div>
+        </div>
+        <div class="poke" id="pk1">
+          <div class="info"></div>
+          <div class="hp">
+            <!-- <progress value="100" max="100"></progress> -->
+            <span class="bar" style="width: 100%"></span>
+            <span class="text"></span>
+          </div>
+          <div class="image">
+            <span class="middle"></span>
+            <img src="" alt="Poke1" />
+          </div>
+        </div>
+        <div class="buttons">
+          <button class="btn" id="m0"></button>
+          <button class="btn" id="m1"></button>
+          <button class="btn" id="m2"></button>
+          <button class="btn" id="m3"></button>
+        </div>
       </div>
-      <span class="text"></span>
-    </td>
-    <td id="hp2">
-      <!-- <progress value="100" max="100"></progress> -->
-      <div class="bar">
-        <span class="bar-fill" style="width: 100%"></span>
-      </div>
-      <span class="text"></span>
-    </td>
-    </tr>
-    <tr>
-      <td id="pk1">
-        <span class="middle"></span>
-        <img src="" alt="Poke1">
-      </td>
-      <td id="pk2">
-        <span class="middle"></span>
-        <img src="" alt="Poke2">
-      </td>
-    </tr>
-    <tr>
-    <td id="buttons">
-      <button class="btn" id="m0"></button>
-      <button class="btn" id="m1"></button>
-      <button class="btn" id="m2"></button>
-      <button class="btn" id="m3"></button>
-    </td>
-    </tr>
-    <tr>
-      <td colspan="2" id="comment"></td>
-    </tr>
-  </table>
-</body>
+      <div class="comment"></div>
+    </div>
+  </body>
 </html>
 <script src="formula.js"></script>
 <script src="app.js"></script>
