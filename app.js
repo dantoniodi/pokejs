@@ -15,18 +15,45 @@ class Pokemon {
     this.stats = stats;
     this.type = type;
     this.moveset = moves;
-    this.stats.evasion = {current:100,stage:0};
-    this.stats.accuracy = {current:100,stage:0};
+    this.stats.evasion = {current:100,initial:100,stage:0}
+    this.stats.accuracy = {current:100,initial:100,stage:0}
   }
-  changeStats(i) { //stats changes uses 2/2 basis (acc and evasion uses 3/3)
-    let statMult = 1
-    if(i.stat.name == 'evasion' || i.stat.name == 'accuracy') {
-      statMult = i.change > 0 ? (3+i.change)/3 : 3/(3-(i.change))
+  changeStats(i) {
+    let statMult;
+    let stageMsg;
+    let nextStage = i.change + this.stats[i.stat.name].stage
+    if(this.stats[i.stat.name].stage == 6) {
+      stageMsg = i.stat.name+" won't go higher!";
+    } else if(this.stats[i.stat.name].stage == -6) {
+      stageMsg = i.stat.name+" won't go lower!";
     } else {
-      statMult = i.change > 0 ? (2+i.change)/2 : 2/(2-(i.change))
+      if(nextStage > 6) { //prevents stage goes past limit
+        this.stats[i.stat.name].stage = 6
+        i.change = this.stats[i.stat.name].stage - 6
+      } else if(nextStage < -6) {
+        this.stats[i.stat.name].stage = -6
+        i.change = -6 - this.stats[i.stat.name].stage
+      } else {
+        this.stats[i.stat.name].stage = nextStage
+      }
+      switch(i.change) {
+        case -3: stageMsg = i.stat.name+" severely fell!"; break
+        case -2: stageMsg = i.stat.name+" harshly fell!"; break
+        case -1: stageMsg = i.stat.name+" fell!"; break
+        case 1: stageMsg = i.stat.name+" rose!"; break
+        case 2: stageMsg = i.stat.name+" sharply rose!"; break
+        case 3: stageMsg = i.stat.name+" rose drastically!"; break
+      }
     }
-    Math.floor(this.stats[i.stat.name].current *= statMult) 
-    this.stats[i.stat.name].stage += i.change
+    if(i.stat.name == 'accuracy') {
+      statMult = nextStage >= 0 ? (3+nextStage)/3 : 3/(3-(nextStage))
+    } else if(i.stat.name == 'evasion') {
+      statMult = nextStage >= 0 ? 3/(3+nextStage) : (3-(nextStage))/3
+    } else { //stats changes uses 2/2 basis (acc and evasion uses 3/3)
+      statMult = nextStage >= 0 ? (2+nextStage)/2 : 2/(2-(nextStage))
+    }
+    this.stats[i.stat.name].current = Math.floor(statMult * this.stats[i.stat.name].initial)
+    return stageMsg
   }
 }
 
@@ -64,22 +91,24 @@ const getMove = url => fetch(url).then((resp) => resp.json())
 
 const setMovePool = async(pool) => {
   let movePool = new Array(4)
-  let moveNum = new Set()
-  while(moveNum.size < 4) { //add random numbers to an unique collection(set)
+  //let moveNum = new Set()
+  let moveNum = new Set(['slash','sand-attack','fury-cutter','minimize'])
+  /*while(moveNum.size < 4) { //add random numbers to an unique collection(set)
     moveNum.add(Math.floor(Math.random() * pool.length))
-  }
+  }*/
   for(let i=0; i<4; i++) {
-    let moveInfo = await getMove(pool[Array.from(moveNum)[i]].move.url)
-    //let moveInfo = await getMove('https://pokeapi.co/api/v2/move/38/')
+    //let moveInfo = await getMove(pool[Array.from(moveNum)[i]].move.url)
+    let moveInfo = await getMove('https://pokeapi.co/api/v2/move/'+Array.from(moveNum)[i])
     movePool.fill({
         'pp': moveInfo.pp,
         'name': moveInfo.name,
         'type': moveInfo.type.name,
         'class': moveInfo.damage_class.name,
         'power': moveInfo.power != null ? moveInfo.power : 0,
-        'accuracy': moveInfo.accuracy != null ? moveInfo.accuracy : 100,
+        'accuracy': moveInfo.accuracy != null ? moveInfo.accuracy : 200,
         'priority': moveInfo.priority != null ? moveInfo.priority : 0,
         'changes': moveInfo.stat_changes.length === 0 ? null: moveInfo.stat_changes,
+        'target': moveInfo.target.name,
         'meta': moveInfo.meta
     }, i)
   }
@@ -196,7 +225,7 @@ function checkTE(moveType,enemyType) {
 async function spawn(bool, id = Math.floor(Math.random() * 640) + 1) {
   let p = await getPokemon(id)
   let pkm = new Pokemon(
-              p.name,
+              p.species.name,
               p.sprites,
               calcHP(p.stats[0]),
               await calcStat(p.stats),
@@ -206,7 +235,7 @@ async function spawn(bool, id = Math.floor(Math.random() * 640) + 1) {
   console.log(pkm);
   if (bool) {
     for (i = 0; i < 4; i++) {
-      let moveText = '<span class="move-name">'+pkm.moveset[i].name+'</span> ('+pkm.moveset[i].type+')<br>'
+      let moveText = '<span class="mname">'+pkm.moveset[i].name+'</span> ('+pkm.moveset[i].type+')<br>'
         +'<small>[Pwr: '+pkm.moveset[i].power+' | Acc: '+pkm.moveset[i].accuracy+']</small>'
       document.getElementById("m" + i).innerHTML = moveText;
     }
@@ -216,19 +245,17 @@ async function spawn(bool, id = Math.floor(Math.random() * 640) + 1) {
 
 async function createPokes() {
   
-  const pk1 = await spawn(true,123)
-  s1 = document.createElement("img");
-  s1.src = pk1.sprite.versions['generation-v']['black-white'].animated['back_default'];
-  document.getElementById("pk1").appendChild(s1);
-  document.getElementById("if1").innerHTML = "<span>" + pk1.name + "</span> Lv." + pk1.lv
-  document.querySelector('#hp1 .text').innerHTML = "<p>HP: " + pk1.hp + "/" + pk1.fullhp + "</p>"
+  const pk1 = await spawn(true)
+  let img1 = pk1.sprite.versions['generation-v']['black-white'].animated['back_default'];
+  document.querySelector("#pk1 img").src = img1;
+  document.getElementById("if1").innerHTML = "<span class='pname'>"+pk1.name+"</span> Lv."+pk1.lv
+  document.querySelector('#hp1 .text').innerHTML = "<p>HP: "+pk1.hp+"/"+pk1.fullhp+"</p>"
 
   const pk2 = await spawn(false);
-  s2 = document.createElement("img");
-  s2.src = pk2.sprite.versions['generation-v']['black-white'].animated['front_default'];
-  document.getElementById("pk2").appendChild(s2);
-  document.getElementById("if2").innerHTML = "<span>" + pk2.name + "</span> Lv." + pk2.lv
-  document.querySelector('#hp2 .text').innerHTML = "<p>HP: " + pk2.hp + "/" + pk2.fullhp + "</p>"
+  let img2 = pk2.sprite.versions['generation-v']['black-white'].animated['front_default'];
+  document.querySelector("#pk2 img").src = img2;
+  document.getElementById("if2").innerHTML = "<span class='pname'>"+pk2.name+"</span> Lv."+pk2.lv
+  document.querySelector('#hp2 .text').innerHTML = "<p>HP: "+pk2.hp+"/"+pk2.fullhp+"</p>"
 
   let moveTurn = 1
   for (i = 0; i < 4; i++) {
@@ -275,6 +302,7 @@ async function createPokes() {
         }
       }
       checkWinner(pk1,pk2)
+      comment.scrollTop = comment.scrollHeight;
       moveTurn++
     });
   }
@@ -282,9 +310,13 @@ async function createPokes() {
 
 function attack(move, attacker, receiver, order) {
   let flinch = 0;
-  comment.innerHTML += "<p><span class='pname'>" + attacker.name + "</span> used <span class='mname'>" + move.name + "</span>!</p>";
-  console.log(attacker.name+' uses '+move.name);
-  if(Math.random() <= (move.accuracy/100)) { //check accuracy
+  let accValue = move.accuracy/100 
+    * attacker.stats['accuracy'].current/100 
+    * receiver.stats['evasion'].current/100
+  comment.innerHTML += "<p><span class='pname'>"+attacker.name
+    +"</span> used <span class='mname'>"+move.name+"</span>!</p>";
+  console.log('Hit chance: '+accValue*100+'%');
+  if(move.accuracy > 100 || Math.random() < accValue) { //accuracy check
     if(move.class !== 'status') {
       let dmgDone = calcDmg( //inflict damage
         move,
@@ -293,11 +325,8 @@ function attack(move, attacker, receiver, order) {
         checkCrit(attacker.stats, move),
         checkTE(move.type,receiver.type)
       )
-      if(receiver.hp > dmgDone) { //prevents HP to be negative
-        receiver.hp -= dmgDone
-      } else {
-        receiver.hp = 0;
-      }
+      //prevents HP to be negative
+      receiver.hp = receiver.hp > dmgDone ? receiver.hp - dmgDone : 0
       if(move.meta != null && move.meta.drain != 0) { //calc draining effect
         let drain;
         if(move.meta.drain > 0) { //positive = drain
@@ -320,7 +349,7 @@ function attack(move, attacker, receiver, order) {
       }
     }
     if(move.meta != null && move.meta.healing > 0) {
-      heal = Math.floor(attacker.fullhp*move.meta.healing/100)
+      let heal = Math.floor(attacker.fullhp*move.meta.healing/100)
       if(attacker.hp + heal > attacker.fullhp) { //prevents overheal
         attacker.hp = attacker.fullhp
       } else {
@@ -328,16 +357,22 @@ function attack(move, attacker, receiver, order) {
       }
       console.log('Heal: '+heal);
     }
+    if(move.changes != null) {
+      console.log('Changes: '+move.changes.length);
+      let self = ['user','user-or-ally','users-field','user-and-allies']
+      let target = self.includes(move.target) ? attacker : receiver
+      let msg = target.changeStats(move.changes[0])
+      setTimeout(function () {
+        comment.innerHTML += "<p><span>"+target.name+"'s</span> "+msg+"</p>";
+      }, 1000);
+      console.log(target)
+    }
     if(move.meta !== null) flinch = move.meta.flinch_chance
     changeBar(attacker,receiver,order)
   } else {
     setTimeout(function () {
       comment.innerHTML += "<p>Attack missed!</p>";
     }, 1000);
-  }
-  if(move.changes != null) {
-    attacker.changeStats(move.changes[0])
-    console.log(attacker.stats)
   }
   //checkWinner(attacker,receiver)
   return flinch //return fling chance from move, default = 0

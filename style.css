@@ -11,20 +11,16 @@ td {
   padding: 15 px;
 }
 table.table {
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 auto;
   background: url('../img/bg1.png') no-repeat;
   max-width: 100%;
   max-height: 100%;
   height: 400px;
-  width: 400px;
-}
-img {
-  max-width: 100%;
+  width: 600px;
 }
 #comment {
   position: absolute;
-  top: -2px;
+  bottom: -2px;
   left: 398px;
   width: 260px;
   height: 398px;
@@ -37,7 +33,6 @@ img {
   margin: 6px auto;
 }
 #comment span {
-  font-weight: bold;
   text-transform: capitalize;
 }
 #buttons {
@@ -48,7 +43,7 @@ img {
   flex-direction: row;
   position: absolute;
   left: 9px;
-  bottom: 7px;
+  top: 56px;
 }
 #buttons > button {
   flex: 1;
@@ -60,36 +55,33 @@ button {
   word-break: break-word;
   overflow: hidden;
 }
-.move-name {
-  font-size: 16px;
+.mname, .pname {
+  font-size: 14px;
   font-weight: bolder;
+}
+#if1, #if2 {
+  position: absolute;
+  text-transform: capitalize;
+  font-size: smaller;
 }
 #if1 {
-  position: absolute;
-  left: 226px;
-  top: 132px;
-  font-size: smaller;
+  left: 225px;
+  top: 212px;
 }
 #if2 {
-  position: absolute;
   left: 22px;
-  bottom: 66px;
-  font-size: smaller;
-}
-span {
-  font-weight: bolder;
-  text-transform: capitalize;
+  top: 75px;
 }
 #hp1 {
   position: absolute;
-  right: 20px;
-  top: 70px;
+  right: 220px;
+  top: 150px;
   width: 150px;
 }
 #hp2 {
   position: absolute;
   left: 20px;
-  bottom: 128px;
+  top: 12px;
   width: 150px;
 }
 .text {
@@ -98,15 +90,31 @@ span {
   top: 5px;
   font-size: smaller;
 }
-#pk1 {
+#pk1, #pk2 {
   position: absolute;
+  width: 120px;
+  height: 120px;
+  max-width: 180px;
+  white-space: nowrap;
+  margin: 0 auto;
+}
+#pk1 img, #pk2 img {
+  vertical-align: middle;
+  max-width: 120px;
+  max-height: 120px;
+}
+.middle {
+  display: inline-block;
+  vertical-align: middle;
+  height: 100%;
+}
+#pk1 {
   left: 70px;
-  bottom: 30px;
+  top: 35px;
 }
 #pk2 {
-  position: absolute;
-  right: 60px;
-  bottom: 160px;
+  right: 215px;
+  bottom: 55px;
 }
 .bar {
   width: 100%;
