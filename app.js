@@ -44,12 +44,12 @@ class Pokemon {
         case 2: stageMsg = i.stat.name+" sharply rose!"; break
         case 3: stageMsg = i.stat.name+" rose drastically!"; break
       }
-    }
+    } //stats changes uses 2/2 basis (acc and evasion uses 3/3)
     if(i.stat.name == 'accuracy') {
       statMult = nextStage >= 0 ? (3+nextStage)/3 : 3/(3-(nextStage))
     } else if(i.stat.name == 'evasion') {
       statMult = nextStage >= 0 ? 3/(3+nextStage) : (3-(nextStage))/3
-    } else { //stats changes uses 2/2 basis (acc and evasion uses 3/3)
+    } else { 
       statMult = nextStage >= 0 ? (2+nextStage)/2 : 2/(2-(nextStage))
     }
     this.stats[i.stat.name].current = Math.floor(statMult * this.stats[i.stat.name].initial)
@@ -234,7 +234,7 @@ async function spawn(bool, id = Math.floor(Math.random() * 640) + 1) {
   console.log(pkm);
   if (bool) {
     for (i = 0; i < 4; i++) {
-      let moveText = '<span class="mname">'+pkm.moveset[i].name+'</span> ('+pkm.moveset[i].type+')<br>'
+      let moveText = '<span class="name">'+pkm.moveset[i].name+'</span> ('+pkm.moveset[i].type+')<br>'
         +'<small>[Pwr: '+pkm.moveset[i].power+' | Acc: '+pkm.moveset[i].accuracy+']</small>'
       document.getElementById("m" + i).innerHTML = moveText;
     }
@@ -245,15 +245,17 @@ async function spawn(bool, id = Math.floor(Math.random() * 640) + 1) {
 async function createPokes() {
   
   const pk1 = await spawn(true)
-  let img1 = pk1.sprite;
-  document.querySelector("#pk1 img").src = img1.versions['generation-v']['black-white'].animated['back_default'];
-  document.querySelector('#pk1 .info').innerHTML = "<span class='pname'>"+pk1.name+"</span> Lv."+pk1.lv
+  s1 = document.createElement("img");
+  s1.src = pk1.sprite.versions['generation-v']['black-white'].animated['back_default'];
+  document.querySelector("#pk1 .image").appendChild(s1);
+  document.querySelector('#pk1 .info').innerHTML = "<span class='name'>"+pk1.name+"</span> Lv."+pk1.lv
   document.querySelector('#pk1 .hp .text').innerHTML = "<p>HP: "+pk1.hp+"/"+pk1.fullhp+"</p>"
 
   const pk2 = await spawn(false);
-  let img2 = pk2.sprite;
-  document.querySelector("#pk2 img").src = img2.versions['generation-v']['black-white'].animated['front_default'];
-  document.querySelector("#pk2 .info").innerHTML = "<span class='pname'>"+pk2.name+"</span> Lv."+pk2.lv
+  s2 = document.createElement("img");
+  s2.src = pk2.sprite.versions['generation-v']['black-white'].animated['front_default'];
+  document.querySelector("#pk2 .image").appendChild(s2);
+  document.querySelector("#pk2 .info").innerHTML = "<span class='name'>"+pk2.name+"</span> Lv."+pk2.lv
   document.querySelector('#pk2 .hp .text').innerHTML = "<p>HP: "+pk2.hp+"/"+pk2.fullhp+"</p>"
 
   let moveTurn = 1
@@ -282,7 +284,7 @@ async function createPokes() {
       if(moveOrder == 0) {
         if(attack(move,pk1,pk2,0) > Math.floor(Math.random() * 100)) { //fling chance
           setTimeout(function () {
-            comment.innerHTML += "<p><span class='pname'>"+pk2.name+"</span> flinched and couldn't move!</p>";
+            comment.innerHTML += "<p><span class='name'>"+pk2.name+"</span> flinched and couldn't move!</p>";
           }, 1000);
         } else {
           if(pk2.hp > 0) {
@@ -292,7 +294,7 @@ async function createPokes() {
       } else {
         if(attack(foeMove,pk2,pk1,1) > Math.floor(Math.random() * 100)) { //fling chance
           setTimeout(function () {
-            comment.innerHTML += "<p><span class='pname'>"+pk1.name+"</span> flinched and couldn't move!</p>";
+            comment.innerHTML += "<p><span class='name'>"+pk1.name+"</span> flinched and couldn't move!</p>";
           }, 1000);
         } else {
           if(pk1.hp > 0) {
@@ -312,8 +314,8 @@ function attack(move, attacker, receiver, order) {
   let accValue = move.accuracy/100 
     * attacker.stats['accuracy'].current/100 
     * receiver.stats['evasion'].current/100
-  comment.innerHTML += "<p><span class='pname'>"+attacker.name
-    +"</span> used <span class='mname'>"+move.name+"</span>!</p>";
+  comment.innerHTML += "<p><span class='name'>"+attacker.name
+    +"</span> used <span class='name'>"+move.name+"</span>!</p>";
   console.log('Hit chance: '+accValue*100+'%');
   if(move.accuracy > 100 || Math.random() < accValue) { //accuracy check
     if(move.class !== 'status') {
@@ -356,7 +358,7 @@ function attack(move, attacker, receiver, order) {
       }
       console.log('Heal: '+heal);
     }
-    if(move.changes != null) {
+    if(move.changes != null) { //reduce or raise stats check
       console.log('Changes: '+move.changes.length);
       let self = ['user','user-or-ally','users-field','user-and-allies']
       let target = self.includes(move.target) ? attacker : receiver
@@ -383,7 +385,7 @@ function checkWinner(pk1,pk2) {
   for(let i=0; i<f.length; i++) {
     if(f[i].hp <= 0) {
       setTimeout(function () {
-        comment.innerHTML += "<p><span class='pname'>"+f[i].name+"</span> has fainted!</p>";
+        comment.innerHTML += "<p><span class='name'>"+f[i].name+"</span> has fainted!</p>";
       }, 2000);
       ko = true
     }

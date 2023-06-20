@@ -27,7 +27,11 @@
   height: 400px;
   margin: 0 auto;
   display: flex;
+  border: 2px solid;
 }
+/* .screen:hover {
+  transform: scale(1.5);
+} */
 .panel {
   position: relative;
   background: url('../img/bg1.png') no-repeat;
@@ -52,6 +56,7 @@
   height: 400px;
   background-color: wheat;
   overflow: auto;
+  border-left: 2px solid;
 }
 .comment p {
   text-align: center;
@@ -138,9 +143,22 @@
   top: 25px;
   width: 150px;
 }
-.mname, .pname {
+.name {
   font-size: 14px;
   font-weight: bolder;
+}
+.cond {
+  position: absolute;
+  left: 0px;
+  top: 7px;
+}
+.cond p {
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  padding: 0px 2px 0px 4px;
+  border-radius: 5px;
+  text-transform: uppercase;
+  color: white;
 }
 .text {
   position: absolute;
