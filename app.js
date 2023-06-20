@@ -2,6 +2,7 @@ const level = Math.floor(Math.random() * (99 - 15)) + 15 //both level (15-99)
 const ev = 0 //effort values, since both are wild pokemon their ev is zero
 const comment = document.querySelector(".comment")
 const buttons = document.querySelectorAll('button.btn')
+const condition = document.querySelectorAll(".cond p")
 const hp_text = document.querySelectorAll(".hp .text")
 const hp_bar = document.querySelectorAll(".hp .bar")
 
@@ -91,14 +92,14 @@ const getMove = url => fetch(url).then((resp) => resp.json())
 
 const setMovePool = async(pool) => {
   let movePool = new Array(4)
-  //let moveNum = new Set()
-  let moveNum = new Set(['thunder-wave','toxic','will-o-wisp','sleep-powder'])
-  /*while(moveNum.size < 4) { //add random numbers to an unique collection(set)
+  let moveNum = new Set()
+  //let moveNum = new Set(['thunder-wave','toxic','will-o-wisp','sleep-powder'])
+  while(moveNum.size < 4) { //add random numbers to an unique collection(set)
     moveNum.add(Math.floor(Math.random() * pool.length))
-  }*/
+  }
   for(let i=0; i<4; i++) {
-    //let moveInfo = await getMove(pool[Array.from(moveNum)[i]].move.url)
-    let moveInfo = await getMove('https://pokeapi.co/api/v2/move/'+Array.from(moveNum)[i])
+    let moveInfo = await getMove(pool[Array.from(moveNum)[i]].move.url)
+    //let moveInfo = await getMove('https://pokeapi.co/api/v2/move/'+Array.from(moveNum)[i])
     movePool.fill({
         'pp': moveInfo.pp,
         'name': moveInfo.name,
@@ -116,7 +117,6 @@ const setMovePool = async(pool) => {
 }
 
 function addComment(phrase,delay=1000) {
-  console.log(phrase)
   if(phrase != null && phrase != '') {
     setTimeout(function () {
       comment.innerHTML += "<p>"+phrase+"</p>";
@@ -142,7 +142,7 @@ async function calcStat(stats) {
       'initial': Math.floor(((0.01 * (2 * stats[i].base_stat + iv + Math.floor(0.25 * ev)) * level) + 5) * N),
       'current': Math.floor(((0.01 * (2 * stats[i].base_stat + iv + Math.floor(0.25 * ev)) * level) + 5) * N),
       'stage': 0
-    }
+    } //current its a initial copy because it can change multiple times during battle
   }
   return pokeStats
 }
@@ -242,7 +242,7 @@ async function spawn(bool, id = Math.floor(Math.random() * 640) + 1) {
 
 async function createPokes() {
   
-  const pk1 = await spawn(true,567)
+  const pk1 = await spawn(true)
   s1 = document.createElement("img");
   s1.src = pk1.sprite.versions['generation-v']['black-white'].animated['back_default'];
   document.querySelector("#pk1 .image").appendChild(s1);
@@ -340,6 +340,31 @@ function attack(move, attacker, receiver, order) {
       }
       console.log('Heal: '+heal);
     }
+    if(move.meta != null && move.meta.category.name == 'ailment') {
+      let ailment = move.meta.ailment.name
+      switch(ailment) {
+        case 'paralysis':
+          condition[order].innerHTML = 'Paralyzed';
+          condition[order].style.backgroundColor = "darkgoldenrod";
+          break;
+        case 'sleep':
+          condition[order].innerHTML = 'Asleep';
+          condition[order].style.backgroundColor = "rosybrown";
+          break;
+        case 'freeze':
+          condition[order].innerHTML = 'Frozen';
+          condition[order].style.backgroundColor = "cadetblue";
+          break;
+        case 'burn':
+          condition[order].innerHTML = 'Burned';
+          condition[order].style.backgroundColor = "orangered";
+          break;
+        case 'poison':
+          condition[order].innerHTML = 'Poisoned';
+          condition[order].style.backgroundColor = "rebeccapurple";
+          break;
+      }
+    }
     if(move.changes != null) { //reduce or raise stats check
       console.log('Changes: '+move.changes.length);
       let self = ['user','user-or-ally','users-field','user-and-allies']
@@ -353,23 +378,24 @@ function attack(move, attacker, receiver, order) {
   } else {
     addComment("Attack missed!")
   }
-  checkWinner(attacker,receiver)
+  checkWinner([receiver,attacker])
   return flinch //return fling chance from move, default = 0
 }
 
-function checkWinner(pk1,pk2) {
+function checkWinner(pokes) {
   let ko = false
-  let f = new Array(pk1,pk2)
-  for(let i=0; i<f.length; i++) {
-    if(f[i].hp <= 0) {
-      addComment("<span class='name'>"+f[i].name+"</span> has fainted!",2000)
+  for(let i=0; i < pokes.length; i++) {
+    if(pokes[i].hp <= 0) {
+      addComment("<span class='name'>"+pokes[i].name+"</span> has fainted!",2000)
+      condition[i].innerHTML = 'Fainted'
+      condition[i].style.backgroundColor = "firebrick";
       ko = true
     }
   }
   if(ko) {
     buttons.forEach(elem => { elem.disabled = true })
     addComment("--- Game Over ---",3000)
-    setTimeout(function() { location.reload() }, 5000)
+    //setTimeout(function() { location.reload() }, 5000)
   } else {
     setTimeout(function() {
       buttons.forEach(elem => { elem.disabled = false })
