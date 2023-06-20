@@ -22,8 +22,9 @@ function calcDmg(move,ata,rec,bon,crit) {
   if (stab.includes(move.type)) {
     X = 1.5;
   }
-  baseDmg = ((2*L*C/5+2)*B*A/D)/50 //never changes
-  let DMG = Math.floor(((baseDmg+2)*X*Y)*Z/255) //gen 1 formula
-  console.log('Damage(base|final): '+Math.floor(baseDmg)+', '+DMG)
-  return DMG
+  let baseDmg = ((2*L*C/5+2)*B*A/D)/50 //never changes
+  let totalDmg = Math.floor(((baseDmg+2)*X*Y)*Z/255) //gen 1 formula
+  let finalDmg = totalDmg > rec.hp ? rec.hp : totalDmg //prevents overkill
+  console.log('Damage(base|total|final): '+Math.floor(baseDmg)+', '+totalDmg+', '+finalDmg)
+  return finalDmg
 }

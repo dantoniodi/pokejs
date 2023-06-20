@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap');
 * {
   font-family: 'Rubik', sans-serif;
-  font-weight: 400;
+  font-weight: 500;
 }
 .title {
   text-align: center;
@@ -81,6 +81,7 @@
   white-space: normal;
   word-break: break-word;
   overflow: hidden;
+  line-height: 1rem;
 }
 .clear {
   width: 100%;
@@ -125,11 +126,11 @@
 }
 #pk1 .info {
   left: 181px;
-  top: 30px;
+  top: 28px;
 }
 #pk2 .info {
   left: -207px;
-  top: 7px;
+  top: 5px;
 }
 #pk1 .hp {
   position: absolute;
@@ -144,7 +145,7 @@
   width: 150px;
 }
 .name {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: bolder;
 }
 .cond {
@@ -205,6 +206,8 @@
 }
 .btn small {
   font-weight: bolder;
+  font-size: 12px;
+  font-style: italic;
 }
 progress {
   width: 100%;
@@ -231,7 +234,7 @@ progress {
 .sub3 {
   --color-1: #ACCFCB;
   --color-2: #E4A9A8;
-  --color-3: #ACCFCB;
+  --color-3: #DBAD4A;
 }
 .sub4 {
   --color-1: #3D8DAE;
