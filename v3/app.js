@@ -4,7 +4,7 @@ const condition = document.querySelectorAll(".cond p")
 const hp_text = document.querySelectorAll(".hp .text")
 const hp_bar = document.querySelectorAll(".hp .bar")
 
-function addComment(phrase,delay=1000) {
+function addComment(phrase,delay=0) {
   if(phrase != null && phrase != '') {
     setTimeout(function () {
       comment.innerHTML += "<p>"+phrase+"</p>";
@@ -13,7 +13,7 @@ function addComment(phrase,delay=1000) {
   }
 }
 
-function checkButtons() {
+function changeBtn() {
     buttons.forEach(elem => { 
       elem.disabled = elem.disabled == true ? false : true
     })
@@ -91,39 +91,55 @@ function checkTE(moveType,enemyType) {
   return scale
 }
 
-async function spawn(bool, id = Math.floor(Math.random() * 640) + 1) {
+function checkStatus(pokes) {
+  //console.log(pokes);
+  for(let i=0; i<pokes.length; i++) {
+    if(pokes[i].status == 'poison' || pokes[i].status == 'burn') {
+      let pain = Math.floor(pokes[i].hp.max/8)
+      if(pokes[i].hp.now > pain){
+        pokes[i].hp.now -= pain
+      } else {
+        pokes[i].hp.now = 0
+      }
+      //pokes[i].hp.now = pokes[i].hp.now > pain ? pokes[i].hp.now - pain : 0
+      console.log(pain);
+    }
+  }
+}
+
+async function createPoke(bool, id = Math.floor(Math.random() * 640) + 1) {
   
   let pkm = new Pokemon()
-  let pdata = await Pokemon.getData(id)
-  await pkm.init(pdata)
-  console.log(pkm);
-  if (bool) {
+  let p = await Pokemon.getData(id)
+  await pkm.create(p)
+  
+  let index = bool ? 1 : 0
+  let sprite = bool ? 'back_default' : 'front_default'
+  let img = document.createElement("img")
+  img.src = pkm.sprite.versions['generation-v']['black-white'].animated[sprite];
+  document.querySelectorAll(".image")[index].appendChild(img);
+  document.querySelectorAll(".info")[index].innerHTML = "<span class='name'>"+pkm.name+"</span> Lv."+pkm.level
+  hp_text[index].innerHTML = "<p>HP: "+pkm.hp.now+"/"+pkm.hp.max+"</p>"
+
+  if(bool) {
     for (i = 0; i < 4; i++) {
       let moveText = '<span class="name">'+pkm.moves[i].name+'</span><br>'
         +'<small>['+pkm.moves[i].type+' | Pwr: '+pkm.moves[i].power+' | Acc: '+pkm.moves[i].accuracy+'%]</small>'
       document.getElementById("m" + i).innerHTML = moveText;
     }
   }
+  console.log(pkm);
   return pkm;
 }
 
-async function createPokes() {
-  
-  const pk1 = await spawn(true) //your poke
-  s1 = document.createElement("img");
-  s1.src = pk1.sprite.versions['generation-v']['black-white'].animated['back_default'];
-  document.querySelector("#pk1 .image").appendChild(s1);
-  document.querySelector('#pk1 .info').innerHTML = "<span class='name'>"+pk1.name+"</span> Lv."+pk1.level
-  hp_text[1].innerHTML = "<p>HP: "+pk1.hp.now+"/"+pk1.hp.max+"</p>"
+async function startBattle() {
 
-  const pk2 = await spawn(false) //enemy poke
-  s2 = document.createElement("img");
-  s2.src = pk2.sprite.versions['generation-v']['black-white'].animated['front_default'];
-  document.querySelector("#pk2 .image").appendChild(s2);
-  document.querySelector("#pk2 .info").innerHTML = "<span class='name'>"+pk2.name+"</span> Lv."+pk2.level
-  hp_text[0].innerHTML = "<p>HP: "+pk2.hp.now+"/"+pk2.hp.max+"</p>"
+  const pk1 = await createPoke(true)
+  const pk2 = await createPoke(false)
 
   let moveTurn = 1
+  let moveOrder;
+  let foeMove;
   for (i = 0; i < 4; i++) {
     let btn = document.getElementById("m" + i)
     let move = pk1.moves[i]
@@ -133,11 +149,11 @@ async function createPokes() {
   function addHandler(btn, move, pk1, pk2) {
     btn.addEventListener("click", function (e) {
       
-      checkButtons() //disables buttons after choosing a move
+      changeBtn() //disables buttons after choosing a move
       console.log('Speed-check: '+pk1.stats.speed.current+', '+pk2.stats.speed.current);
       
-      let foeMove = pk2.moves[Math.floor(Math.random() * 3)]
-      let moveOrder = ( //set move order (1=foe,0=you)
+      foeMove = pk2.moves[Math.floor(Math.random() * 3)]
+      moveOrder = ( //set move order (1=foe,0=you)
         foeMove.priority > move.priority ? 1 : //check foe move prority
         foeMove.priority < move.priority ? 0 : //check your move prority
         pk2.stats.speed.current > pk1.stats.speed.current ? 1 : 0 //check pkm speed
@@ -145,29 +161,46 @@ async function createPokes() {
       addComment('--- Turn '+moveTurn+' ---')
       //console.log('Order: '+moveOrder);
       
+      let par = false
       if(moveOrder == 0) {
         if(attack(move,pk1,pk2,0) > Math.floor(Math.random() * 100)) { //fling chance
           addComment("<span class='name'>"+pk2.name+"</span> flinched and couldn't move!")
         } else {
-          if(pk2.hp.now > 0) {
-            setTimeout(function () {
-              attack(foeMove,pk2,pk1,1)
-              checkButtons() //reenables buttons
-            }, 3000)
+          if(pk2.status == "paralysis" && 75 > Math.floor(Math.random() * 100)) {
+            addComment("<span class='name'>"+pk2.name+"</span> it's paralyzed!")
+          } else {
+            if(pk2.hp.now > 0) {
+              setTimeout(function () {
+                attack(foeMove,pk2,pk1,1)
+                //changeBtn() //reenables buttons
+              }, 2000)
+            } else {
+              changeBtn()
+            }
           }
         }
       } else {
         if(attack(foeMove,pk2,pk1,1) > Math.floor(Math.random() * 100)) { //fling chance
           addComment("<span class='name'>"+pk1.name+"</span> flinched and couldn't move!")
         } else {
-          if(pk1.hp.now > 0) {
-            setTimeout(function () {
-              attack(move,pk1,pk2,0)
-              checkButtons() //reenables buttons
-            }, 3000)
+          if(pk1.status == "paralysis" && 75 > Math.floor(Math.random() * 100)) {
+            addComment("<span class='name'>"+pk1.name+"</span> it's paralyzed!")
+          } else {
+            if(pk1.hp.now > 0) { //check if still alive or paralyzed
+              setTimeout(function () {
+                attack(move,pk1,pk2,0)
+                changeBtn() //reenables buttons
+              }, 2000)
+            } else {
+              changeBtn() //reenables buttons
+            }
           }
         }
       }
+      setTimeout(checkStatus,2100,[pk1,pk2])
+      setTimeout(changeBar,2200,pk1,pk2,0)
+      changeBtn()
+      //changeBar(pk1,pk2,moveOrder)
       moveTurn++
     });
   }
@@ -214,6 +247,7 @@ function attack(move, attacker, receiver, order) {
     }
     if(move.meta != null && move.meta.category.name == 'ailment') {
       let ailment = move.meta.ailment.name
+      receiver.setStatus(ailment)
       switch(ailment) {
         case 'paralysis':
           condition[order].innerHTML = 'Paralyzed';
@@ -270,4 +304,4 @@ function checkWinner(pokes) {
   }
 }
 
-createPokes()
+startBattle()

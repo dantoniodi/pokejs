@@ -5,14 +5,15 @@ class Pokemon {
   constructor() {
     this.level = lv;
   }
-  async init(data) {
-    this.name = data.species.name;
-    this.sprite = data.sprites;
+  async create(info) {
+    this.id = info.id
+    this.hp = this.calcHP(info.stats)
+    this.name = info.species.name;
+    this.sprite = info.sprites;
     this.nature = await this.getNature()
-    this.hp = this.calcHP(data.stats)
-    this.type = await this.getType(data.types);
-    this.moves = await this.setMovePool(data.moves);
-    this.stats = await this.calcStat(data.stats);
+    this.type = await this.getType(info.types);
+    this.moves = await this.setMovePool(info.moves);
+    this.stats = await this.calcStat(info.stats);
     this.stats.evasion = {current:100,initial:100,stage:0}
     this.stats.accuracy = {current:100,initial:100,stage:0}
 
@@ -46,14 +47,14 @@ class Pokemon {
   }
   async setMovePool(pool) {
     let movePool = new Array(4)
-    let moveNum = new Set()
-    //let moveNum = new Set(['thunder-wave','toxic','will-o-wisp','sleep-powder'])
-    while(moveNum.size < 4) { //add random numbers to an unique collection(set)
+    //let moveNum = new Set()
+    let moveNum = new Set(['thunder-wave','toxic','will-o-wisp','sleep-powder'])
+    /*while(moveNum.size < 4) { //add random numbers to an unique collection(set)
       moveNum.add(Math.floor(Math.random() * pool.length))
-    }
+    }*/
     for(let i=0; i<4; i++) {
-      let moveInfo = await fetch(pool[Array.from(moveNum)[i]].move.url).then((resp) => resp.json())
-      //let moveInfo = await getMove('https://pokeapi.co/api/v2/move/'+Array.from(moveNum)[i])
+      //let moveInfo = await fetch(pool[Array.from(moveNum)[i]].move.url).then((resp) => resp.json())
+      let moveInfo = await fetch('https://pokeapi.co/api/v2/move/'+Array.from(moveNum)[i]).then((resp) => resp.json())
       movePool.fill({
           'pp': moveInfo.pp,
           'name': moveInfo.name,
@@ -69,13 +70,6 @@ class Pokemon {
     }
     return movePool
   }
-  //Formula found on https://pokemon.fandom.com/wiki/Statistics
-  calcHP(stat) {
-    let iv = Math.floor(Math.random() * 31)
-    let hp = Math.floor(0.01 * (2 * stat[0].base_stat + iv + Math.floor(0.25 * ev)) * lv) + lv + 10
-    return {now:hp,max:hp}
-  }
-
   async calcStat(stats) {
     let iv = Math.floor(Math.random() * 31) //random IVs (0-31)
     let nat = this.nature
@@ -90,6 +84,23 @@ class Pokemon {
       } //current its a initial copy because it can change multiple times during battle
     }
     return pokeStats
+  }
+  calcHP(stat) { //Formula found on https://pokemon.fandom.com/wiki/Statistics
+    let iv = Math.floor(Math.random() * 31)
+    let hp = Math.floor(0.01 * (2 * stat[0].base_stat + iv + Math.floor(0.25 * ev)) * lv) + lv + 10
+    return {now:hp,max:hp}
+  }
+  setStatus(value) { //updates condition
+    switch(value) {
+      case 'paralysis':
+        this.stats.speed.current = Math.floor(this.stats.speed.current/2);
+        break;
+      case 'burn':
+        this.stats.attack.current = Math.floor(this.stats.attack.current/2);
+        break;
+    }
+    this.status = value
+    
   }
   changeStats(i) {
     let statMult;
