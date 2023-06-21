@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon">
+    <title>PokeJS - Random Battle Simulator</title>
+  </head>
+  <body>
+    <h1 class="title">
+      <span style="--i:1">P</span>
+      <span style="--i:2">o</span>
+      <span style="--i:3">k</span>
+      <span style="--i:4">é</span>
+      <span style="--i:5">J</span>
+      <span style="--i:6">S</span> - Random Battle Simulator
+    </h1>
+    <h3 class="subtitle">
+      <i>
+        &laquo;
+        <span class="subword sub1">made</span>
+        <span class="subword sub2">entirely</span>
+        <span class="subword sub3">on</span>
+        <span class="subword sub4">JavaScript</span>
+        with <a href="https://pokeapi.co/" target="_blank">PokéAPI</a> 
+        &raquo;
+      </i>
+    </h3>
+    <div class="screen">
+      <!-- <div class="log"></div> -->
+      <div class="panel">
+        <div class="clear"></div>
+        <div class="poke" id="pk2">
+          <div class="info"></div>
+          <div class="hp">
+            <!-- <progress value="100" max="100"></progress> -->
+            <span class="bar" style="width: 100%"></span>
+            <span class="cond"><p></p></span>
+            <span class="text"></span>
+          </div>
+          <div class="image">
+            <span class="middle"></span>
+          </div>
+        </div>
+        <div class="poke" id="pk1">
+          <div class="info"></div>
+          <div class="hp">
+            <!-- <progress value="100" max="100"></progress> -->
+            <span class="bar" style="width: 100%"></span>
+            <span class="cond"><p></p></span>
+            <span class="text"></span>
+          </div>
+          <div class="image">
+            <span class="middle"></span>
+          </div>
+        </div>
+        <div class="buttons">
+          <button class="btn" id="m0"></button>
+          <button class="btn" id="m1"></button>
+          <button class="btn" id="m2"></button>
+          <button class="btn" id="m3"></button>
+        </div>
+      </div>
+      <div class="comment"></div>
+    </div>
+  </body>
+</html>
+<script src="poke.js"></script>
+<script src="formula.js"></script>
+<script src="app.js"></script>

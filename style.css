@@ -238,9 +238,9 @@ progress {
   --color-3: #DBAD4A;
 }
 .sub4 {
-  --color-1: #3D8DAE;
+  --color-1: #E4A9A8;
   --color-2: #DF8453;
-  --color-3: #E4A9A8;
+  --color-3: #3D8DAE;
 }
 @keyframes color-animation {
   0%    {color: var(--color-1)}
