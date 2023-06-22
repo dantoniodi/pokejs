@@ -48,7 +48,7 @@ class Pokemon {
   async setMovePool(pool) {
     let movePool = new Array(4)
     //let moveNum = new Set()
-    let moveNum = new Set(['thunder-wave','toxic','will-o-wisp','sleep-powder'])
+    let moveNum = new Set(['thunder-wave','toxic','swords-dance','sleep-powder'])
     /*while(moveNum.size < 4) { //add random numbers to an unique collection(set)
       moveNum.add(Math.floor(Math.random() * pool.length))
     }*/
@@ -90,34 +90,60 @@ class Pokemon {
     let hp = Math.floor(0.01 * (2 * stat[0].base_stat + iv + Math.floor(0.25 * ev)) * lv) + lv + 10
     return {now:hp,max:hp}
   }
-  setStatus(value) { //updates condition
-    console.log(this.type.name.includes('electric'));
+  setStatus(value,ord) { //updates condition
     switch(value) {
       case 'paralysis':
         if(!(this.type.name.includes('electric'))) {
           this.status = value
           this.stats.speed.current = Math.floor(this.stats.speed.current/2);
+          condition[ord].style.backgroundColor = "darkgoldenrod";
+          condition[ord].innerHTML = 'PAR';
+        } else {
+          addComment("<span class='name'>"+this.name+"</span> is immune to paralyze!")
+        }
+        break;
+      case 'poison':
+        if(!(this.type.name.includes('steel') || this.type.name.includes('poison'))) {
+          this.status = value
+          condition[ord].style.backgroundColor = "rebeccapurple";
+          condition[ord].innerHTML = 'PSN';
+        } else {
+          addComment("<span class='name'>"+this.name+"</span> is immune to poison!")
         }
         break;
       case 'burn':
         if(!(this.type.name.includes('fire'))) {
           this.status = value
           this.stats.attack.current = Math.floor(this.stats.attack.current/2);
-        }
-        break;
-      case 'poison':
-        if(!(this.type.name.includes('steel'))) {
-          this.status = value
+          condition[ord].style.backgroundColor = "orangered";
+          condition[ord].innerHTML = 'BRN';
+        } else {
+          addComment("<span class='name'>"+this.name+"</span> is immune to burn!")
         }
         break;
       case 'freeze':
         if(!(this.type.name.includes('ice'))) {
           this.status = value
+          condition[ord].style.backgroundColor = "cadetblue";
+          condition[ord].innerHTML = 'FRZ';
+        } else {
+          addComment("<span class='name'>"+this.name+"</span> is immune to freeze!")
         }
+        break;
+      case 'sleep':
+        this.status = value
+        condition[ord].style.backgroundColor = "rosybrown";
+        condition[ord].innerHTML = 'SLP';
+        this.sleep = Math.floor(Math.random() * (4 - 2 + 1) + 2) //between 4-2
+        break;
+      case 'healthy':
+        this.status = value
+        condition[ord].style.backgroundColor = "white";
+        condition[ord].innerHTML = '';
         break;
     }
   }
-  changeStats(i) {
+  changeStats(i) { //raise or reduce stat stages
     let statMult;
     let stageMsg;
     let nextStage = i.change + this.stats[i.stat.name].stage

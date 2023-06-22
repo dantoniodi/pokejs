@@ -93,19 +93,36 @@ function checkTE(moveType,enemyType) {
   return scale
 }
 
-function checkStatus(pokes) {
-  //console.log(pokes);
+function checkSleep(pk1,pk2,ord) {
+  let pokes = [pk1,pk2]
   for(let i=0; i<pokes.length; i++) {
-    if(pokes[i].status == 'poison' || pokes[i].status == 'burn') {
-      let pain = Math.floor(pokes[i].hp.max/8)
-      pokes[i].hp.now = pokes[i].hp.now > pain ? pokes[i].hp.now - pain : 0
-      console.log(pain);
+    if(pokes[i].status == 'sleep') {
+      if(pokes[i].sleep > 0) {
+        pokes[i].sleep--
+      }
+      if(pokes[i].sleep == 0) {
+        pokes[i].setStatus('healthy',ord)
+        addComment("<span class='name'>"+pokes[i].name+"</span> wake up!")
+      }
+      console.log(pokes[i].sleep)
     }
   }
 }
 
+function checkStatus(pk1,pk2,ord) {
+  let pokes = [pk1,pk2]
+  for(let i=0; i<pokes.length; i++) {
+    if(pokes[i].status == 'poison' || pokes[i].status == 'burn') {
+      let pain = Math.floor(pokes[i].hp.max/8)
+      pokes[i].hp.now = pokes[i].hp.now > pain ? pokes[i].hp.now - pain : 0
+      addComment("<span class='name'>"+pokes[i].name+"</span> suffers from "+pokes[i].status+"!")
+      console.log(pain);
+    }
+  }
+  changeBar(pk1,pk2,ord)
+}
+
 function checkMeta(meta,dmg,ata,rec,ord) {
-  console.log(meta);
   if(meta.drain != 0) { //calc draining effect, positive=drain/negative=recoil
     let drain = Math.floor(dmg * meta.drain / 100)
     if((ata.hp.now + drain) > ata.hp.max) { //prevents overheal
@@ -128,30 +145,10 @@ function checkMeta(meta,dmg,ata,rec,ord) {
   }
   if(meta.category.name == 'ailment') {
     let ailment = meta.ailment.name
-    rec.setStatus(ailment)
-    switch(rec.status) {
-      case 'paralysis':
-        condition[ord].innerHTML = 'Paralyzed';
-        condition[ord].style.backgroundColor = "darkgoldenrod";
-        break;
-      case 'sleep':
-        condition[ord].innerHTML = 'Asleep';
-        condition[ord].style.backgroundColor = "rosybrown";
-        break;
-      case 'freeze':
-        condition[ord].innerHTML = 'Frozen';
-        condition[ord].style.backgroundColor = "cadetblue";
-        break;
-      case 'burn':
-        condition[ord].innerHTML = 'Burned';
-        condition[ord].style.backgroundColor = "orangered";
-        break;
-      case 'poison':
-        condition[ord].innerHTML = 'Poisoned';
-        condition[ord].style.backgroundColor = "rebeccapurple";
-        break;
-    }
+    rec.setStatus(ailment,ord)
   }
+  changeBar(ata,rec,ord)
+  return meta.flinch_chance > 0 ? meta.flinch_chance : 0
 }
 
 async function createPoke(bool, id = Math.floor(Math.random() * 640) + 1) {
@@ -181,20 +178,22 @@ async function createPoke(bool, id = Math.floor(Math.random() * 640) + 1) {
 
 async function startBattle() {
 
-  const pk1 = await createPoke(true,243)
-  const pk2 = await createPoke(false,26)
+  //second param(optional) = pokemon id
+  const pk1 = await createPoke(true,25)
+  const pk2 = await createPoke(false)
 
   let moveTurn = 1
   let moveOrder;
   let foeMove;
   for (i = 0; i < 4; i++) {
-    let btn = document.getElementById("m" + i)
+    let btn = document.getElementById("m"+i)
     let move = pk1.moveset[i]
-    addHandler(btn, move, pk1, pk2);
+    addHandler(btn,move,pk1,pk2);
   }
+  addComment('--- Battle Started ---')
 
-  function addHandler(btn, move, pk1, pk2) {
-    btn.addEventListener("click", function (e) {
+  function addHandler(btn,move,pk1,pk2) {
+    btn.addEventListener("click", function(e) {
       
       changeBtn() //disables buttons after choosing a move
       console.log('Speed-check: '+pk1.stats.speed.current+', '+pk2.stats.speed.current);
@@ -204,25 +203,29 @@ async function startBattle() {
         foeMove.priority > move.priority ? 1 : //check foe move prority
         foeMove.priority < move.priority ? 0 : //check your move prority
         pk2.stats.speed.current > pk1.stats.speed.current ? 1 : 0 //check pkm speed
-      );
-      addComment('--- Turn '+moveTurn+' ---')
+      )
+      if(moveTurn > 1) addComment('--- Turn '+moveTurn+' ---')
       console.log('Order: '+moveOrder);
       
-      let par = false
       if(moveOrder == 0) {
         if(attack(move,pk1,pk2,0) > Math.floor(Math.random() * 100)) { //fling chance
           addComment("<span class='name'>"+pk2.name+"</span> flinched and couldn't move!")
         } else {
-          if(pk2.status == "paralysis" && 75 > Math.floor(Math.random() * 100)) {
+          if(pk2.status == "paralysis" && 25 > Math.floor(Math.random() * 100)) {
             addComment("<span class='name'>"+pk2.name+"</span> is fully paralyzed!")
+            changeBtn() //skip turn and reenables buttons
           } else {
-            if(pk2.hp.now > 0) {
-              setTimeout(function () {
-                attack(foeMove,pk2,pk1,1)
-                //changeBtn() //reenables buttons
-              }, 2000)
+            checkSleep(pk1,pk2,0)
+            if(pk2.status == "sleep" && pk2.sleep > 0) {
+              addComment("<span class='name'>"+pk2.name+"</span> is sleeping!")
+              changeBtn() //skip turn and reenables buttons
             } else {
-              changeBtn()
+              if(pk2.hp.now > 0) {
+                setTimeout(function () {
+                  attack(foeMove,pk2,pk1,1)
+                  changeBtn() //reenables buttons after second move
+                }, 2000)
+              }
             }
           }
         }
@@ -230,24 +233,26 @@ async function startBattle() {
         if(attack(foeMove,pk2,pk1,1) > Math.floor(Math.random() * 100)) { //fling chance
           addComment("<span class='name'>"+pk1.name+"</span> flinched and couldn't move!")
         } else {
-          if(pk1.status == "paralysis" && 75 > Math.floor(Math.random() * 100)) {
+          if(pk1.status == "paralysis" && 25 > Math.floor(Math.random() * 100)) {
             addComment("<span class='name'>"+pk1.name+"</span> is fully paralyzed!")
+            changeBtn() //skip turn and reenables buttons
           } else {
-            if(pk1.hp.now > 0) { //check if still alive or paralyzed
-              setTimeout(function () {
-                attack(move,pk1,pk2,0)
-                changeBtn() //reenables buttons
-              }, 2000)
+            checkSleep(pk2,pk1,1)
+            if(pk1.status == "sleep" && pk1.sleep > 0) {
+              addComment("<span class='name'>"+pk1.name+"</span> is sleeping!")
+              changeBtn() //skip turn and reenables buttons
             } else {
-              changeBtn() //reenables buttons
+              if(pk1.hp.now > 0) { //check if still alive or paralyzed
+                setTimeout(function () {
+                  attack(move,pk1,pk2,0)
+                  changeBtn() //reenables buttons after second move
+                }, 2000)
+              }
             }
           }
         }
       }
-      setTimeout(checkStatus,2100,[pk1,pk2])
-      setTimeout(changeBar,2200,pk1,pk2,0)
-      changeBtn()
-      //changeBar(pk1,pk2,moveOrder)
+      setTimeout(checkStatus,2100,pk1,pk2,0)
       moveTurn++
     });
   }
@@ -272,18 +277,16 @@ function attack(move, attacker, receiver, order) {
       )
       receiver.hp.now -= dmgDone //inflict damage
     }
-    if(move.meta != null) {
-      checkMeta(move.meta,dmgDone,attacker,receiver,order)
-    }
     if(move.changes != null) { //reduce or raise stats check
-      console.log('Changes: '+move.changes.length);
       let self = ['user','user-or-ally','users-field','user-and-allies']
       let target = self.includes(move.target) ? attacker : receiver
       let msg = target.changeStats(move.changes[0])
       addComment("<span>"+target.name+"'s</span> "+msg)
+      console.log('Changes: '+move.changes.length);
     }
-    if(move.meta != null) flinch = move.meta.flinch_chance
-    changeBar(attacker,receiver,order)
+    if(move.meta != null) {
+      flinch = checkMeta(move.meta,dmgDone,attacker,receiver,order)
+    }
   } else {
     addComment("Attack missed!")
   }
@@ -303,7 +306,7 @@ function checkWinner(pokes) {
   }
   if(ko) {
     addComment("--- Game Over ---",3000)
-    //setTimeout(function() { location.reload() }, 5000)
+    setTimeout(function() { location.reload() }, 8000)
   }
 }
 

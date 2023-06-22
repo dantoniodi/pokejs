@@ -152,12 +152,12 @@
 .cond {
   position: absolute;
   left: 0px;
-  top: 7px;
+  top: 8px;
 }
 .cond p {
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.5px;
-  padding: 0px 2px 0px 4px;
+  padding: 1px 3px 0px;
   border-radius: 4px;
   text-transform: uppercase;
   color: white;
