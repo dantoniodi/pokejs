@@ -71,9 +71,10 @@ function checkCrit(ata,mov,gen = 2) { //check critical hit chance
 //Check type effectiveness (attack type x enemy type)
 function checkTE(moveType,enemyType) { 
   let scale = 1;
-  for (i = 0; i < enemyType.length; i++) {
-    for (x = 0; x < enemyType[i][1].length; x++) {
-      if (enemyType[i][1][x].includes(moveType)) {
+  console.log(enemyType);
+  for(let i=0; i < enemyType.name.length; i++) {
+    for (let x=0; x < enemyType.rels[i].length; x++) {
+      if (enemyType.rels[i][x].includes(moveType)) {
         switch (x) {
           case 0: scale = scale * 0; break; //immune
           case 1: scale = scale / 2; break; //resistant 
@@ -87,6 +88,7 @@ function checkTE(moveType,enemyType) {
     scale < 1 ? "It was not very effective!" :
     scale > 1 ? "It was super effective!" : null
   );
+  console.log('Scale: '+scale);
   addComment(msg)
   return scale
 }
@@ -96,13 +98,58 @@ function checkStatus(pokes) {
   for(let i=0; i<pokes.length; i++) {
     if(pokes[i].status == 'poison' || pokes[i].status == 'burn') {
       let pain = Math.floor(pokes[i].hp.max/8)
-      if(pokes[i].hp.now > pain){
-        pokes[i].hp.now -= pain
-      } else {
-        pokes[i].hp.now = 0
-      }
-      //pokes[i].hp.now = pokes[i].hp.now > pain ? pokes[i].hp.now - pain : 0
+      pokes[i].hp.now = pokes[i].hp.now > pain ? pokes[i].hp.now - pain : 0
       console.log(pain);
+    }
+  }
+}
+
+function checkMeta(meta,dmg,ata,rec,ord) {
+  console.log(meta);
+  if(meta.drain != 0) { //calc draining effect, positive=drain/negative=recoil
+    let drain = Math.floor(dmg * meta.drain / 100)
+    if((ata.hp.now + drain) > ata.hp.max) { //prevents overheal
+      ata.hp.now = ata.hp.max
+    } else if((ata.hp.now + drain) < 0) { //prevents negative HP by recoil
+      ata.hp.now = 0
+    } else {
+      ata.hp.now += drain
+    }
+    console.log('Drain: '+drain)
+  }
+  if(meta.healing > 0) { //calc healing effect
+    let heal = Math.floor(ata.hp.max*meta.healing/100)
+    if(ata.hp.now + heal > ata.hp.max) { //prevents overheal
+      ata.hp.now = ata.hp.max
+    } else {
+      ata.hp.now += heal
+    }
+    console.log('Heal: '+heal);
+  }
+  if(meta.category.name == 'ailment') {
+    let ailment = meta.ailment.name
+    rec.setStatus(ailment)
+    switch(rec.status) {
+      case 'paralysis':
+        condition[ord].innerHTML = 'Paralyzed';
+        condition[ord].style.backgroundColor = "darkgoldenrod";
+        break;
+      case 'sleep':
+        condition[ord].innerHTML = 'Asleep';
+        condition[ord].style.backgroundColor = "rosybrown";
+        break;
+      case 'freeze':
+        condition[ord].innerHTML = 'Frozen';
+        condition[ord].style.backgroundColor = "cadetblue";
+        break;
+      case 'burn':
+        condition[ord].innerHTML = 'Burned';
+        condition[ord].style.backgroundColor = "orangered";
+        break;
+      case 'poison':
+        condition[ord].innerHTML = 'Poisoned';
+        condition[ord].style.backgroundColor = "rebeccapurple";
+        break;
     }
   }
 }
@@ -118,13 +165,13 @@ async function createPoke(bool, id = Math.floor(Math.random() * 640) + 1) {
   let img = document.createElement("img")
   img.src = pkm.sprite.versions['generation-v']['black-white'].animated[sprite];
   document.querySelectorAll(".image")[index].appendChild(img);
-  document.querySelectorAll(".info")[index].innerHTML = "<span class='name'>"+pkm.name+"</span> Lv."+pkm.level
+  document.querySelectorAll(".info")[index].innerHTML = "<span class='name'>"+pkm.name+"</span> Lv."+pkm.lv
   hp_text[index].innerHTML = "<p>HP: "+pkm.hp.now+"/"+pkm.hp.max+"</p>"
 
   if(bool) {
     for (i = 0; i < 4; i++) {
-      let moveText = '<span class="name">'+pkm.moves[i].name+'</span><br>'
-        +'<small>['+pkm.moves[i].type+' | Pwr: '+pkm.moves[i].power+' | Acc: '+pkm.moves[i].accuracy+'%]</small>'
+      let moveText = '<span class="name">'+pkm.moveset[i].name+'</span><br>'
+        +'<small>['+pkm.moveset[i].type+' | Pwr: '+pkm.moveset[i].power+' | Acc: '+pkm.moveset[i].accuracy+'%]</small>'
       document.getElementById("m" + i).innerHTML = moveText;
     }
   }
@@ -134,15 +181,15 @@ async function createPoke(bool, id = Math.floor(Math.random() * 640) + 1) {
 
 async function startBattle() {
 
-  const pk1 = await createPoke(true)
-  const pk2 = await createPoke(false)
+  const pk1 = await createPoke(true,243)
+  const pk2 = await createPoke(false,26)
 
   let moveTurn = 1
   let moveOrder;
   let foeMove;
   for (i = 0; i < 4; i++) {
     let btn = document.getElementById("m" + i)
-    let move = pk1.moves[i]
+    let move = pk1.moveset[i]
     addHandler(btn, move, pk1, pk2);
   }
 
@@ -152,14 +199,14 @@ async function startBattle() {
       changeBtn() //disables buttons after choosing a move
       console.log('Speed-check: '+pk1.stats.speed.current+', '+pk2.stats.speed.current);
       
-      foeMove = pk2.moves[Math.floor(Math.random() * 3)]
+      foeMove = pk2.moveset[Math.floor(Math.random() * 3)]
       moveOrder = ( //set move order (1=foe,0=you)
         foeMove.priority > move.priority ? 1 : //check foe move prority
         foeMove.priority < move.priority ? 0 : //check your move prority
         pk2.stats.speed.current > pk1.stats.speed.current ? 1 : 0 //check pkm speed
       );
       addComment('--- Turn '+moveTurn+' ---')
-      //console.log('Order: '+moveOrder);
+      console.log('Order: '+moveOrder);
       
       let par = false
       if(moveOrder == 0) {
@@ -167,7 +214,7 @@ async function startBattle() {
           addComment("<span class='name'>"+pk2.name+"</span> flinched and couldn't move!")
         } else {
           if(pk2.status == "paralysis" && 75 > Math.floor(Math.random() * 100)) {
-            addComment("<span class='name'>"+pk2.name+"</span> it's paralyzed!")
+            addComment("<span class='name'>"+pk2.name+"</span> is fully paralyzed!")
           } else {
             if(pk2.hp.now > 0) {
               setTimeout(function () {
@@ -184,7 +231,7 @@ async function startBattle() {
           addComment("<span class='name'>"+pk1.name+"</span> flinched and couldn't move!")
         } else {
           if(pk1.status == "paralysis" && 75 > Math.floor(Math.random() * 100)) {
-            addComment("<span class='name'>"+pk1.name+"</span> it's paralyzed!")
+            addComment("<span class='name'>"+pk1.name+"</span> is fully paralyzed!")
           } else {
             if(pk1.hp.now > 0) { //check if still alive or paralyzed
               setTimeout(function () {
@@ -208,6 +255,7 @@ async function startBattle() {
 
 function attack(move, attacker, receiver, order) {
   let flinch = 0;
+  let dmgDone = 0;
   let accValue = move.accuracy/100 
     * attacker.stats['accuracy'].current/100 
     * receiver.stats['evasion'].current/100
@@ -215,7 +263,7 @@ function attack(move, attacker, receiver, order) {
   console.log('Hit chance: '+accValue*100+'%');
   if(move.accuracy > 100 || Math.random() < accValue) { //accuracy check
     if(move.class !== 'status') {
-      let dmgDone = calcDmg(
+      dmgDone = calcDmg(
         move,
         attacker,
         receiver,
@@ -223,53 +271,9 @@ function attack(move, attacker, receiver, order) {
         checkTE(move.type,receiver.type)
       )
       receiver.hp.now -= dmgDone //inflict damage
-      if(move.meta != null && move.meta.drain != 0) { 
-        //calc draining effect, positive=drain/negative=recoil
-        let drain = Math.floor(dmgDone * move.meta.drain / 100)
-        if((attacker.hp.now + drain) > attacker.hp.max) { //prevents overheal
-          attacker.hp.now = attacker.hp.max
-        } else if((attacker.hp.now + drain) < 0) { //prevents negative HP by recoil
-          attacker.hp.now = 0
-        } else {
-          attacker.hp.now += drain
-        }
-        console.log('Drain: '+drain)
-      }
     }
-    if(move.meta != null && move.meta.healing > 0) {
-      let heal = Math.floor(attacker.hp.max*move.meta.healing/100)
-      if(attacker.hp.now + heal > attacker.hp.max) { //prevents overheal
-        attacker.hp.now = attacker.hp.max
-      } else {
-        attacker.hp.now += heal
-      }
-      console.log('Heal: '+heal);
-    }
-    if(move.meta != null && move.meta.category.name == 'ailment') {
-      let ailment = move.meta.ailment.name
-      receiver.setStatus(ailment)
-      switch(ailment) {
-        case 'paralysis':
-          condition[order].innerHTML = 'Paralyzed';
-          condition[order].style.backgroundColor = "darkgoldenrod";
-          break;
-        case 'sleep':
-          condition[order].innerHTML = 'Asleep';
-          condition[order].style.backgroundColor = "rosybrown";
-          break;
-        case 'freeze':
-          condition[order].innerHTML = 'Frozen';
-          condition[order].style.backgroundColor = "cadetblue";
-          break;
-        case 'burn':
-          condition[order].innerHTML = 'Burned';
-          condition[order].style.backgroundColor = "orangered";
-          break;
-        case 'poison':
-          condition[order].innerHTML = 'Poisoned';
-          condition[order].style.backgroundColor = "rebeccapurple";
-          break;
-      }
+    if(move.meta != null) {
+      checkMeta(move.meta,dmgDone,attacker,receiver,order)
     }
     if(move.changes != null) { //reduce or raise stats check
       console.log('Changes: '+move.changes.length);
@@ -277,9 +281,8 @@ function attack(move, attacker, receiver, order) {
       let target = self.includes(move.target) ? attacker : receiver
       let msg = target.changeStats(move.changes[0])
       addComment("<span>"+target.name+"'s</span> "+msg)
-      console.log(target)
     }
-    if(move.meta !== null) flinch = move.meta.flinch_chance
+    if(move.meta != null) flinch = move.meta.flinch_chance
     changeBar(attacker,receiver,order)
   } else {
     addComment("Attack missed!")

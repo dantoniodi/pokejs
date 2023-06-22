@@ -3,7 +3,7 @@ const ev = 0 //effort values, since both are wild pokemon their ev is zero
 
 class Pokemon {
   constructor() {
-    this.level = lv;
+    this.lv = lv;
   }
   async create(info) {
     this.id = info.id
@@ -12,7 +12,7 @@ class Pokemon {
     this.sprite = info.sprites;
     this.nature = await this.getNature()
     this.type = await this.getType(info.types);
-    this.moves = await this.setMovePool(info.moves);
+    this.moveset = await this.setMovePool(info.moves);
     this.stats = await this.calcStat(info.stats);
     this.stats.evasion = {current:100,initial:100,stage:0}
     this.stats.accuracy = {current:100,initial:100,stage:0}
@@ -24,18 +24,18 @@ class Pokemon {
     return data
   }
   async getType(types) {
-    let typeMatch = new Array()
+    let typeRels = new Array()
+    let typeName = new Array()
     for(let i=0; i<types.length; i++) {
       let data = await fetch(types[i].type.url).then(resp => resp.json())
-      typeMatch.push([
-        data.name,[
-          data.damage_relations.no_damage_from.map(names => names.name),
-          data.damage_relations.half_damage_from.map(names => names.name),
-          data.damage_relations.double_damage_from.map(names => names.name)
-        ]
+      typeName.push(data.name)
+      typeRels.push([
+        data.damage_relations.no_damage_from.map(names => names.name),
+        data.damage_relations.half_damage_from.map(names => names.name),
+        data.damage_relations.double_damage_from.map(names => names.name)
       ])
     }
-    return typeMatch
+    return {name:typeName, rels:typeRels}
   }
   async getNature(id = Math.floor(Math.random() * 25 + 1)) {
     let data = await fetch(`https://pokeapi.co/api/v2/nature/${id}`).then(resp => resp.json())
@@ -91,16 +91,31 @@ class Pokemon {
     return {now:hp,max:hp}
   }
   setStatus(value) { //updates condition
+    console.log(this.type.name.includes('electric'));
     switch(value) {
       case 'paralysis':
-        this.stats.speed.current = Math.floor(this.stats.speed.current/2);
+        if(!(this.type.name.includes('electric'))) {
+          this.status = value
+          this.stats.speed.current = Math.floor(this.stats.speed.current/2);
+        }
         break;
       case 'burn':
-        this.stats.attack.current = Math.floor(this.stats.attack.current/2);
+        if(!(this.type.name.includes('fire'))) {
+          this.status = value
+          this.stats.attack.current = Math.floor(this.stats.attack.current/2);
+        }
+        break;
+      case 'poison':
+        if(!(this.type.name.includes('steel'))) {
+          this.status = value
+        }
+        break;
+      case 'freeze':
+        if(!(this.type.name.includes('ice'))) {
+          this.status = value
+        }
         break;
     }
-    this.status = value
-    
   }
   changeStats(i) {
     let statMult;
