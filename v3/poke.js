@@ -2,8 +2,9 @@ const lv = Math.floor(Math.random() * (99 - 15)) + 15 //both level (15-99)
 const ev = 0 //effort values, since both are wild pokemon their ev is zero
 
 class Pokemon {
-  constructor() {
+  constructor(div) {
     this.lv = lv;
+    this.div = div
   }
   async create(info) {
     this.id = info.id
@@ -16,7 +17,6 @@ class Pokemon {
     this.stats = await this.calcStat(info.stats);
     this.stats.evasion = {current:100,initial:100,stage:0}
     this.stats.accuracy = {current:100,initial:100,stage:0}
-
   }
   static async getData(id) {
     let url = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`)
@@ -47,14 +47,14 @@ class Pokemon {
   }
   async setMovePool(pool) {
     let movePool = new Array(4)
-    //let moveNum = new Set()
-    let moveNum = new Set(['thunder-wave','toxic','swords-dance','sleep-powder'])
-    /*while(moveNum.size < 4) { //add random numbers to an unique collection(set)
+    let moveNum = new Set()
+    //let moveNum = new Set(['thunder-wave','toxic','swords-dance','sleep-powder'])
+    while(moveNum.size < 4) { //add random numbers to an unique collection(set)
       moveNum.add(Math.floor(Math.random() * pool.length))
-    }*/
+    }
     for(let i=0; i<4; i++) {
-      //let moveInfo = await fetch(pool[Array.from(moveNum)[i]].move.url).then((resp) => resp.json())
-      let moveInfo = await fetch('https://pokeapi.co/api/v2/move/'+Array.from(moveNum)[i]).then((resp) => resp.json())
+      let moveInfo = await fetch(pool[Array.from(moveNum)[i]].move.url).then((resp) => resp.json())
+      //let moveInfo = await fetch('https://pokeapi.co/api/v2/move/'+Array.from(moveNum)[i]).then((resp) => resp.json())
       movePool.fill({
           'pp': moveInfo.pp,
           'name': moveInfo.name,
@@ -90,56 +90,56 @@ class Pokemon {
     let hp = Math.floor(0.01 * (2 * stat[0].base_stat + iv + Math.floor(0.25 * ev)) * lv) + lv + 10
     return {now:hp,max:hp}
   }
-  setStatus(value,ord) { //updates condition
+  setStatus(value) { //updates condition
     switch(value) {
       case 'paralysis':
         if(!(this.type.name.includes('electric'))) {
-          this.status = value
+          this.cond = value
           this.stats.speed.current = Math.floor(this.stats.speed.current/2);
-          condition[ord].style.backgroundColor = "darkgoldenrod";
-          condition[ord].innerHTML = 'PAR';
+          this.div.status.style.backgroundColor = "darkgoldenrod";
+          this.div.status.innerHTML = 'PAR';
         } else {
           addComment("<span class='name'>"+this.name+"</span> is immune to paralyze!")
         }
         break;
       case 'poison':
         if(!(this.type.name.includes('steel') || this.type.name.includes('poison'))) {
-          this.status = value
-          condition[ord].style.backgroundColor = "rebeccapurple";
-          condition[ord].innerHTML = 'PSN';
+          this.cond = value
+          this.div.status.style.backgroundColor = "rebeccapurple";
+          this.div.status.innerHTML = 'PSN';
         } else {
           addComment("<span class='name'>"+this.name+"</span> is immune to poison!")
         }
         break;
       case 'burn':
         if(!(this.type.name.includes('fire'))) {
-          this.status = value
+          this.cond = value
           this.stats.attack.current = Math.floor(this.stats.attack.current/2);
-          condition[ord].style.backgroundColor = "orangered";
-          condition[ord].innerHTML = 'BRN';
+          this.div.status.style.backgroundColor = "orangered";
+          this.div.status.innerHTML = 'BRN';
         } else {
           addComment("<span class='name'>"+this.name+"</span> is immune to burn!")
         }
         break;
       case 'freeze':
         if(!(this.type.name.includes('ice'))) {
-          this.status = value
-          condition[ord].style.backgroundColor = "cadetblue";
-          condition[ord].innerHTML = 'FRZ';
+          this.cond = value
+          this.div.status.style.backgroundColor = "cadetblue";
+          this.div.status.innerHTML = 'FRZ';
         } else {
           addComment("<span class='name'>"+this.name+"</span> is immune to freeze!")
         }
         break;
       case 'sleep':
-        this.status = value
-        condition[ord].style.backgroundColor = "rosybrown";
-        condition[ord].innerHTML = 'SLP';
+        this.cond = value
+        this.div.status.style.backgroundColor = "rosybrown";
+        this.div.status.innerHTML = 'SLP';
         this.sleep = Math.floor(Math.random() * (4 - 2 + 1) + 2) //between 4-2
         break;
       case 'healthy':
-        this.status = value
-        condition[ord].style.backgroundColor = "white";
-        condition[ord].innerHTML = '';
+        this.cond = value
+        this.div.status.style.backgroundColor = "white";
+        this.div.status.innerHTML = '';
         break;
     }
   }
